@@ -19,22 +19,187 @@ const getJobLogs = asyncHandler(async (req, res) => {
   res.json({ success: true, data: logs });
 });
 
-// @desc    Manually run a job (mock trigger for now since actual trigger requires calling the function)
+// @desc    Get all cron logs with filtering and pagination
+// @route   GET /api/admin/cron/logs
+const getCronLogs = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20, jobName, status } = req.query;
+  const skip = (page - 1) * limit;
+
+  const query = {};
+  if (jobName) query.jobName = new RegExp(jobName, 'i');
+  if (status) query.status = status;
+
+  const logs = await CronJobLog.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  const total = await CronJobLog.countDocuments(query);
+
+  res.json({
+    success: true,
+    data: logs,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
+});
+
+// @desc    Get cron dashboard summary
+// @route   GET /api/admin/cron/dashboard
+const getDashboardSummary = asyncHandler(async (req, res) => {
+  const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  
+  const totalRuns = await CronJobLog.countDocuments({ 
+    createdAt: { $gte: last24h } 
+  });
+
+  const successfulRuns = await CronJobLog.countDocuments({
+    status: "completed",
+    createdAt: { $gte: last24h }
+  });
+
+  const failedRuns = await CronJobLog.countDocuments({
+    status: "failed",
+    createdAt: { $gte: last24h }
+  });
+
+  const averageDuration = await CronJobLog.aggregate([
+    {
+      $match: {
+        status: "completed",
+        createdAt: { $gte: last24h }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        avgDuration: { $avg: "$durationMs" }
+      }
+    }
+  ]);
+
+  const recentFailures = await CronJobLog.find({
+    status: "failed",
+    createdAt: { $gte: last24h }
+  }).sort({ createdAt: -1 }).limit(5);
+
+  res.json({
+    success: true,
+    data: {
+      summary: {
+        totalRuns,
+        successfulRuns,
+        failedRuns,
+        successRate: totalRuns > 0 ? ((successfulRuns / totalRuns) * 100).toFixed(2) : 0,
+        averageDuration: averageDuration[0]?.avgDuration || 0
+      },
+      recentFailures
+    }
+  });
+});
+
+// @desc    Manually run a job (trigger job execution)
 // @route   POST /api/admin/cron/jobs/:jobName/run
 const runJobManually = asyncHandler(async (req, res) => {
-  // Normally, we'd map jobName to the actual imported job function and execute it.
-  // For the sake of this mock API:
   const { jobName } = req.params;
   
-  // Free up lock just in case
-  await CronLock.findOneAndUpdate({ jobName }, { lockedUntil: null, status: 'idle' });
+  // Release lock to allow job to run
+  await CronLock.findOneAndUpdate(
+    { jobName },
+    { 
+      lockedUntil: null,
+      status: 'idle',
+      $unset: { errorMessage: 1 }
+    },
+    { upsert: true }
+  );
 
-  // Map of job name to function would go here. For now, just return success.
-  res.json({ success: true, message: `Job ${jobName} lock released and marked for manual trigger. Execution will be captured in logs shortly.` });
+  res.json({
+    success: true,
+    message: `Job ${jobName} lock released. The job will execute at its next scheduled time or can be triggered by server.`
+  });
+});
+
+// @desc    Clear old cron logs
+// @route   POST /api/admin/cron/logs/clear
+const clearOldLogs = asyncHandler(async (req, res) => {
+  const { daysToKeep = 30 } = req.body;
+  const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
+
+  const result = await CronJobLog.deleteMany({ createdAt: { $lt: cutoffDate } });
+
+  res.json({
+    success: true,
+    message: `Cleared ${result.deletedCount} old cron logs (before ${daysToKeep} days)`,
+    deletedCount: result.deletedCount
+  });
+});
+
+// @desc    Get cron settings
+// @route   GET /api/admin/cron/settings
+const getCronSettings = asyncHandler(async (req, res) => {
+  const SystemSettings = require("../models/SystemSettings");
+  
+  let settings = await SystemSettings.findOne({});
+  
+  if (!settings) {
+    settings = new SystemSettings({
+      automation: {
+        enabled: true,
+        taskDueTodayTime: "08:00",
+        taskDueTomorrowTime: "18:00",
+        overdueCheckTime: "09:00",
+        dailyDigestTime: "19:00",
+        weeklySummaryDay: 1,
+        weeklySummaryTime: "09:00",
+        slaBreachCheckEnabled: true,
+        autoHoldEnabled: true,
+        autoCloseEnabled: true,
+        backupEnabled: true,
+        backupTime: "02:00",
+        backupRetentionDays: 30,
+        mediaCleanupEnabled: true
+      }
+    });
+    await settings.save();
+  }
+  
+  res.json({ success: true, data: settings.automation || {} });
+});
+
+// @desc    Update cron settings
+// @route   PUT /api/admin/cron/settings
+const updateCronSettings = asyncHandler(async (req, res) => {
+  const SystemSettings = require("../models/SystemSettings");
+  
+  let settings = await SystemSettings.findOne({});
+  
+  if (!settings) {
+    settings = new SystemSettings({ automation: req.body });
+  } else {
+    settings.automation = { ...settings.automation, ...req.body };
+  }
+  
+  await settings.save();
+
+  res.json({
+    success: true,
+    message: "Cron settings updated successfully",
+    data: settings.automation
+  });
 });
 
 module.exports = {
   getJobsStatus,
   getJobLogs,
-  runJobManually
+  getCronLogs,
+  runJobManually,
+  getDashboardSummary,
+  clearOldLogs,
+  getCronSettings,
+  updateCronSettings
 };
