@@ -1,0 +1,17 @@
+2026-05-11 17:41:25 [error]: Error: CORS: Origin http://localhost:5174 not allowed
+    at origin (D:\onepws\task-onpews\backend\config\cors.js:12:16)
+    at D:\onepws\task-onpews\backend\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (D:\onepws\task-onpews\backend\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (D:\onepws\task-onpews\backend\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (D:\onepws\task-onpews\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\onepws\task-onpews\backend\node_modules\router\index.js:342:13)
+    at D:\onepws\task-onpews\backend\node_modules\router\index.js:297:9
+    at processParams (D:\onepws\task-onpews\backend\node_modules\router\index.js:582:12)
+    at next (D:\onepws\task-onpews\backend\node_modules\router\index.js:291:5)
+    at internalNext (D:\onepws\task-onpews\backend\node_modules\helmet\index.cjs:531:6)
+    at xXssProtectionMiddleware (D:\onepws\task-onpews\backend\node_modules\helmet\index.cjs:311:3)
+    at internalNext (D:\onepws\task-onpews\backend\node_modules\helmet\index.cjs:529:6)
+    at xPoweredByMiddleware (D:\onepws\task-onpews\backend\node_modules\helmet\index.cjs:304:3)
+    at internalNext (D:\onepws\task-onpews\backend\node_modules\helmet\index.cjs:529:6)
+    at xPermittedCrossDomainPoliciesMiddleware (D:\onepws\task-onpews\backend\node_modules\helmet\index.cjs:297:3)
+    at internalNext (D:\onepws\task-onpews\backend\node_modules\helmet\index.cjs:529:6)

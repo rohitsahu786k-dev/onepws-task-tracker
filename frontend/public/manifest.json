@@ -1,0 +1,17 @@
+{
+  "name": "ONEPWS",
+  "short_name": "ONEPWS",
+  "description": "ONEPWS Marketing Workflow System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#E92F2E",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
