@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { Link } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import * as taskService from '../../services/task.service';
 import toast from 'react-hot-toast';
@@ -16,7 +17,7 @@ const COLUMNS = [
 const TaskBoard = () => {
   const { workspace } = useAuthStore();
   const queryClient = useQueryClient();
-  const workspaceId = workspace?._id || 'mock-workspace-id';
+  const workspaceId = workspace?._id || workspace?.id || workspace;
 
   const { data, isLoading } = useQuery({
     queryKey: ['tasks', workspaceId],
@@ -27,11 +28,11 @@ const TaskBoard = () => {
   const updateStatusMutation = useMutation({
     mutationFn: ({ taskId, status }) => taskService.updateTaskStatus(workspaceId, taskId, status),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tasks', workspaceId]);
+      queryClient.invalidateQueries({ queryKey: ['tasks', workspaceId] });
     },
     onError: () => {
       toast.error('Failed to update task status');
-      queryClient.invalidateQueries(['tasks', workspaceId]); // Revert optimistic UI
+      queryClient.invalidateQueries({ queryKey: ['tasks', workspaceId] }); // Revert optimistic UI
     }
   });
 
@@ -61,6 +62,18 @@ const TaskBoard = () => {
     // Optimistic Update can be added here
     updateStatusMutation.mutate({ taskId: draggableId, status: newStatus });
   };
+
+  if (!workspaceId) {
+    return (
+      <div className="rounded-md border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-950">
+        <h1 className="text-xl font-semibold text-slate-950 dark:text-white">Select a workspace to use Task Board</h1>
+        <p className="mt-2 text-sm text-slate-500">Kanban stages, assignees, comments, and SLA details are workspace-specific.</p>
+        <Link to="/workspaces/new" className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">
+          Create workspace
+        </Link>
+      </div>
+    );
+  }
 
   if (isLoading) return <div className="p-8">Loading Board...</div>;
 

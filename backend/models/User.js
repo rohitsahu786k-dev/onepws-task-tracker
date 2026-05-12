@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const schema = new mongoose.Schema({
   name: String,
@@ -7,14 +8,16 @@ const schema = new mongoose.Schema({
   phone: String,
   avatar: String,
   designation: String,
+  departmentName: String,
   employeeCode: String,
   jd: String,
   bio: String,
+  refreshToken: { type: String, select: false },
   authProvider: { type: String, enum: ["local", "google"], default: "local" },
   googleId: String,
   isGoogleAuth: Boolean,
-  globalRole: { type: String, enum: ["super_admin", "user"], default: "user" },
-  role: { type: String, enum: ["super_admin", "admin", "manager", "member", "viewer"], default: "member" },
+  globalRole: { type: String, enum: ["super_admin", "admin", "user"], default: "user" },
+  role: { type: String, enum: ["super_admin", "admin", "manager", "member", "viewer", "employee", "client"], default: "member" },
   workspaces: [{
     workspace: { type: mongoose.Schema.Types.ObjectId, ref: "Workspace" },
     role: { type: String, enum: ["owner", "admin", "manager", "member", "viewer"], default: "member" },
@@ -55,4 +58,17 @@ const schema = new mongoose.Schema({
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
 }, { timestamps: true });
 
-module.exports = mongoose.models.User || mongoose.model('User', schema);
+schema.pre('save', async function (next) {
+  if (!this.isModified('password') || !this.password) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+// Compare password method
+schema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+module.exports = mongoose.models.User
+  ? delete mongoose.models.User && mongoose.model('User', schema)
+  : mongoose.model('User', schema);

@@ -6,22 +6,41 @@ const axiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ── Request: attach access token ───────────────────────────────────────────────
+const getAccessToken = () => localStorage.getItem('access_token') || localStorage.getItem('accessToken');
+const getRefreshToken = () => localStorage.getItem('refresh_token') || localStorage.getItem('refreshToken');
+
+const storeTokens = ({ accessToken, refreshToken }) => {
+  if (accessToken) {
+    localStorage.setItem('access_token', accessToken);
+    localStorage.removeItem('accessToken');
+  }
+  if (refreshToken) {
+    localStorage.setItem('refresh_token', refreshToken);
+    localStorage.removeItem('refreshToken');
+  }
+};
+
+const clearTokens = () => {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+};
+
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// ── Response: silent refresh on 401 ──────────────────────────────────────────
 let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
-  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token)));
+  failedQueue.forEach((item) => (error ? item.reject(error) : item.resolve(token)));
   failedQueue = [];
 };
 
@@ -30,38 +49,41 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const original = error.config;
 
-    if (error.response?.status === 401 && !original._retry) {
+    if (error.response?.status === 401 && !original?._retry) {
       if (isRefreshing) {
-        return new Promise((resolve, reject) => failedQueue.push({ resolve, reject }))
-          .then((token) => {
-            original.headers.Authorization = `Bearer ${token}`;
-            return axiosInstance(original);
-          });
+        return new Promise((resolve, reject) => failedQueue.push({ resolve, reject })).then((token) => {
+          original.headers.Authorization = `Bearer ${token}`;
+          return axiosInstance(original);
+        });
       }
 
       original._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = getRefreshToken();
       if (!refreshToken) {
         isRefreshing = false;
-        localStorage.clear();
-        window.location.href = '/auth/login';
+        clearTokens();
+        window.location.href = '/login';
         return Promise.reject(error);
       }
 
       try {
         const { data } = await axios.post('/api/auth/refresh', { refreshToken });
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        axiosInstance.defaults.headers.common.Authorization = `Bearer ${data.accessToken}`;
-        processQueue(null, data.accessToken);
-        original.headers.Authorization = `Bearer ${data.accessToken}`;
+        const accessToken = data.accessToken || data.data?.accessToken;
+        const nextRefreshToken = data.refreshToken || data.data?.refreshToken;
+
+        if (!accessToken) throw new Error('Refresh response did not include an access token.');
+
+        storeTokens({ accessToken, refreshToken: nextRefreshToken });
+        axiosInstance.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+        processQueue(null, accessToken);
+        original.headers.Authorization = `Bearer ${accessToken}`;
         return axiosInstance(original);
       } catch (err) {
         processQueue(err, null);
-        localStorage.clear();
-        window.location.href = '/auth/login';
+        clearTokens();
+        window.location.href = '/login';
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

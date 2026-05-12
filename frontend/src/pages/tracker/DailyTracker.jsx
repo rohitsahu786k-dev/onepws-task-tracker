@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AgGridReact } from 'ag-grid-react';
+import { Link } from 'react-router-dom';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import useAuthStore from '../../store/authStore';
@@ -11,12 +12,7 @@ import { format } from 'date-fns';
 const DailyTracker = () => {
   const { workspace } = useAuthStore();
   const queryClient = useQueryClient();
-  const [gridApi, setGridApi] = useState(null);
-
-  // Hardcode workspace ID for now if context doesn't have it, otherwise use actual
-  // Make sure you have selected a workspace. 
-  // In a real scenario, this would come from the top level context/zustand.
-  const workspaceId = workspace?._id || 'mock-workspace-id';
+  const workspaceId = workspace?._id || workspace?.id || workspace;
 
   const { data: configData, isLoading: isConfigLoading } = useQuery({
     queryKey: ['trackerConfig', workspaceId],
@@ -34,7 +30,7 @@ const DailyTracker = () => {
     mutationFn: ({ rowId, fieldKey, value }) => trackerService.updateTrackerCell(workspaceId, rowId, fieldKey, value),
     onSuccess: () => {
       toast.success('Row updated successfully');
-      queryClient.invalidateQueries(['trackerRows', workspaceId]);
+      queryClient.invalidateQueries({ queryKey: ['trackerRows', workspaceId] });
     },
     onError: () => toast.error('Failed to update row')
   });
@@ -46,7 +42,7 @@ const DailyTracker = () => {
     }),
     onSuccess: () => {
       toast.success('New tracker row created');
-      queryClient.invalidateQueries(['trackerRows', workspaceId]);
+      queryClient.invalidateQueries({ queryKey: ['trackerRows', workspaceId] });
     },
     onError: (error) => toast.error(error.response?.data?.message || 'Failed to create row')
   });
@@ -118,9 +114,20 @@ const DailyTracker = () => {
   };
 
   const onGridReady = (params) => {
-    setGridApi(params.api);
     params.api.sizeColumnsToFit();
   };
+
+  if (!workspaceId) {
+    return (
+      <div className="rounded-md border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-950">
+        <h1 className="text-xl font-semibold text-slate-950 dark:text-white">Select a workspace to use Daily Tracker</h1>
+        <p className="mt-2 text-sm text-slate-500">Tracker rows and field configuration are isolated per workspace.</p>
+        <Link to="/workspaces/new" className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">
+          Create workspace
+        </Link>
+      </div>
+    );
+  }
 
   if (isConfigLoading || isRowsLoading) return <div className="p-8">Loading Tracker...</div>;
 

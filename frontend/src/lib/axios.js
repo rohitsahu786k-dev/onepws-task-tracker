@@ -7,10 +7,29 @@ const api = axios.create({
   withCredentials: true, // For refresh token cookies if used, or just good practice
 });
 
+const getAccessToken = () => localStorage.getItem('access_token') || localStorage.getItem('accessToken');
+const getRefreshToken = () => localStorage.getItem('refresh_token') || localStorage.getItem('refreshToken');
+const storeTokens = ({ accessToken, refreshToken }) => {
+  if (accessToken) {
+    localStorage.setItem('access_token', accessToken);
+    localStorage.removeItem('accessToken');
+  }
+  if (refreshToken) {
+    localStorage.setItem('refresh_token', refreshToken);
+    localStorage.removeItem('refreshToken');
+  }
+};
+const clearTokens = () => {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+};
+
 // Request Interceptor: Attach Access Token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -57,22 +76,23 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
       
-      const refreshToken = localStorage.getItem('refresh_token');
+      const refreshToken = getRefreshToken();
       if (!refreshToken) {
         // Logout if no refresh token
-        localStorage.removeItem('access_token');
+        clearTokens();
         window.location.href = '/login';
         return Promise.reject(error);
       }
 
       try {
-        const { data } = await axios.post(`${API_URL}/auth/refresh`, { token: refreshToken });
+        const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
         
-        const newAccessToken = data.data.accessToken;
-        const newRefreshToken = data.data.refreshToken;
+        const newAccessToken = data.accessToken || data.data?.accessToken;
+        const newRefreshToken = data.refreshToken || data.data?.refreshToken;
+
+        if (!newAccessToken) throw new Error('Refresh response did not include an access token.');
         
-        localStorage.setItem('access_token', newAccessToken);
-        if(newRefreshToken) localStorage.setItem('refresh_token', newRefreshToken);
+        storeTokens({ accessToken: newAccessToken, refreshToken: newRefreshToken });
         
         api.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
         originalRequest.headers.Authorization = 'Bearer ' + newAccessToken;
@@ -81,8 +101,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        clearTokens();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {
