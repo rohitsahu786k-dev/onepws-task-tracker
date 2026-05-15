@@ -5,6 +5,8 @@ const mapToObject = (value) => {
   return { ...value };
 };
 
+const normalizeRole = (user) => user?.workspaceRole || user?.role || user?.roleName;
+
 const validateFieldType = (field, value) => {
   if (value === undefined || value === null || value === '') return;
 
@@ -47,23 +49,26 @@ const validateFieldType = (field, value) => {
   }
 };
 
-const validateRowData = (configFields, rowData, existingRow = {}, isFinalSubmit = false) => {
+const validateRowData = (configFields, rowData, existingRow = {}, options = {}) => {
+  const { enforceRequired = true, validateOnlyKeys = null, isFinalSubmit = false } = options;
   const mergedData = { ...mapToObject(existingRow.rowData), ...rowData };
+  const keysToValidate = validateOnlyKeys ? new Set(validateOnlyKeys) : null;
 
   for (const field of configFields) {
     if (field.isVisible === false || field.isDeleted || field.fieldType === 'auto') continue;
+    if (keysToValidate && !keysToValidate.has(field.fieldKey)) continue;
 
     const val = typeof mergedData[field.fieldKey] === 'string'
       ? mergedData[field.fieldKey].trim()
       : mergedData[field.fieldKey];
 
-    if (field.isRequired && (val === undefined || val === null || val === '')) {
+    if (enforceRequired && field.isRequired && (val === undefined || val === null || val === '')) {
       throw new Error(`Field '${field.label}' is required.`);
     }
 
     validateFieldType(field, val);
 
-    if (field.fieldKey === 'remark_if_pending' && mergedData.final_status === 'pending' && !val) {
+    if (enforceRequired && field.fieldKey === 'remark_if_pending' && mergedData.final_status === 'pending' && !val && mergedData.actual_closing_date) {
       throw new Error('Remark If Pending is required when status is Pending.');
     }
 
@@ -71,12 +76,12 @@ const validateRowData = (configFields, rowData, existingRow = {}, isFinalSubmit 
       throw new Error('Actual Closing Date is required when status is Submitted.');
     }
 
-    if (field.fieldKey === 'type_of_product' && String(mergedData.type_of_task || '').includes('cat') && !val) {
+    if (enforceRequired && field.fieldKey === 'type_of_product' && String(mergedData.type_of_task || '').includes('cat') && !val) {
       throw new Error('Product Type is required for Catalogue tasks.');
     }
   }
 
-  if (isFinalSubmit && !mergedData.actual_closing_date) {
+  if ((isFinalSubmit || mergedData.final_status === 'submitted') && !mergedData.actual_closing_date) {
     throw new Error('Actual Closing Date is required before submitting the row.');
   }
 
@@ -85,18 +90,30 @@ const validateRowData = (configFields, rowData, existingRow = {}, isFinalSubmit 
 
 const checkRowLock = (row, user) => {
   if (!row) return;
-  if (user.role === 'admin' || user.role === 'super_admin') return;
+  const role = normalizeRole(user);
+  if (['admin', 'super_admin', 'owner'].includes(role)) return;
 
   const rowData = mapToObject(row.rowData);
-  if (row.isLocked || rowData.final_status === 'submitted') {
+  if (row.isLocked || rowData.final_status === 'submitted' || rowData.final_status === 'closed') {
     throw new Error('This row is submitted and locked. Only admin can edit.');
   }
-  if (rowData.final_status === 'closed') {
-    throw new Error('This row is closed and cannot be edited.');
+};
+
+const checkFieldPermission = (field, user) => {
+  const role = normalizeRole(user);
+  if (!role || ['admin', 'super_admin', 'owner'].includes(role)) return;
+
+  const hiddenRoles = field.permissions?.hideFromRoles || [];
+  if (hiddenRoles.includes(role)) throw new Error(`Field '${field.label}' is hidden for your role.`);
+
+  const editRoles = field.permissions?.editRoles || [];
+  if (editRoles.length && !editRoles.includes(role)) {
+    throw new Error(`You do not have permission to edit '${field.label}'.`);
   }
 };
 
 module.exports = {
   validateRowData,
   checkRowLock,
+  checkFieldPermission,
 };

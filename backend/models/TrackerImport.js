@@ -8,6 +8,8 @@ const schema = new mongoose.Schema({
   errors: [{ rowNumber: Number, fieldKey: String, message: String }],
   status: { type: String, enum: ["processing", "completed", "failed"], default: "processing" },
   importedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-}, { timestamps: true });
+}, { timestamps: true, suppressReservedKeysWarning: true });
+
+schema.index({ workspace: 1, createdAt: -1 });
 
 module.exports = mongoose.models.TrackerImport || mongoose.model('TrackerImport', schema);

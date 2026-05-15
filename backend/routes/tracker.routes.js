@@ -4,6 +4,7 @@ const { protect, verifyWorkspaceAccess, checkModuleEnabled, checkPermission } = 
 const { checkAnyPermission } = require('../utils/permission');
 const { checkTrackerRowAccess, checkTrackerCellFieldAccess } = require('../middleware/ownership.middleware');
 const ctrl = require('../controllers/tracker.controller');
+const upload = require('../middleware/upload.middleware');
 
 router.use(protect, verifyWorkspaceAccess, checkModuleEnabled('tracker'));
 
@@ -45,18 +46,18 @@ router.patch('/rows/:rowId/submit', checkTrackerRowAccess, ctrl.submitRow);
 router.patch('/rows/:rowId/lock', checkPermission('tracker', 'lock_row'), ctrl.lockRow);
 router.patch('/rows/:rowId/unlock', checkPermission('tracker', 'unlock_row'), ctrl.unlockRow);
 
-router.post('/import', checkPermission('tracker', 'bulk_import'), (req, res) => res.json({}));
-router.get('/import/:importId', checkPermission('tracker', 'bulk_import'), (req, res) => res.json({}));
-router.get('/template', checkPermission('tracker', 'bulk_export'), (req, res) => res.json({}));
-router.post('/export/excel', checkPermission('tracker', 'bulk_export'), (req, res) => res.json({}));
-router.post('/export/pdf', checkPermission('tracker', 'bulk_export'), (req, res) => res.json({}));
-router.post('/bulk-update', checkPermission('tracker', 'update_any_row'), (req, res) => res.json({}));
-router.post('/bulk-delete', checkPermission('tracker', 'delete_row'), (req, res) => res.json({}));
+router.post('/import', checkPermission('tracker', 'bulk_import'), upload.single('file'), ctrl.importRows);
+router.get('/import/:importId', checkPermission('tracker', 'bulk_import'), ctrl.getImportById);
+router.get('/template', checkPermission('tracker', 'bulk_export'), ctrl.downloadTemplate);
+router.post('/export/excel', checkPermission('tracker', 'bulk_export'), ctrl.exportExcel);
+router.post('/export/pdf', checkPermission('tracker', 'bulk_export'), ctrl.exportPdf);
+router.post('/bulk-update', checkPermission('tracker', 'update_any_row'), ctrl.bulkUpdateRows);
+router.post('/bulk-delete', checkPermission('tracker', 'delete_row'), ctrl.bulkDeleteRows);
 
-router.get('/reports/summary', checkPermission('tracker', 'view'), (req, res) => res.json({}));
-router.get('/reports/user-wise', checkPermission('tracker', 'view'), (req, res) => res.json({}));
-router.get('/reports/department-wise', checkPermission('tracker', 'view'), (req, res) => res.json({}));
-router.get('/reports/delay', checkPermission('tracker', 'view'), (req, res) => res.json({}));
-router.get('/reports/monthly', checkPermission('tracker', 'view'), (req, res) => res.json({}));
+router.get('/reports/summary', checkPermission('tracker', 'view'), ctrl.summaryReport);
+router.get('/reports/user-wise', checkPermission('tracker', 'view'), ctrl.summaryReport);
+router.get('/reports/department-wise', checkPermission('tracker', 'view'), ctrl.summaryReport);
+router.get('/reports/delay', checkPermission('tracker', 'view'), ctrl.summaryReport);
+router.get('/reports/monthly', checkPermission('tracker', 'view'), ctrl.summaryReport);
 
 module.exports = router;

@@ -13,6 +13,8 @@ router.put('/zoom', ctrl.updateZoomSettings);
 router.post('/zoom/test', ctrl.testZoom);
 router.get('/google-meet', ctrl.getGoogleMeetSettings);
 router.put('/google-meet', ctrl.updateGoogleMeetSettings);
+router.get('/google-meet/auth-url', ctrl.getGoogleMeetAuthUrl);
+router.get('/google-meet/callback', ctrl.googleMeetCallback);
 router.post('/google-meet/test', ctrl.testGoogleMeet);
 router.post('/google-meet/disconnect', ctrl.disconnectGoogleMeet);
 

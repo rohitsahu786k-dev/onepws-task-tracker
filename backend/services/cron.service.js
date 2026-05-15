@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const dayjs = require('dayjs');
 const Task = require('../models/Task');
 const MOM = require('../models/MOM');
-const { notify } = require('./notification.service');
+const { notify, notifyOncePerDay } = require('./notification.service');
 const { sendCalendarReminders, markOverdueEvents } = require('./calendar.service');
 
 cron.schedule("*/5 * * * *", async () => {
@@ -22,18 +22,18 @@ cron.schedule("0 18 * * *", async () => {
   });
 
   for (const task of tasks) {
-    await notify({
-      workspace: task.workspace,
-      recipients: task.assignedTo,
-      type: "deadline_approaching",
-      title: `Deadline Tomorrow: ${task.taskNumber}`,
-      message: `${task.title} is due tomorrow.`,
-      refModel: "Task",
-      refId: task._id,
-      actionUrl: `/tasks/${task._id}`,
-      channels: { inApp: true, email: true },
-      metadata: { taskNumber: task.taskNumber, dueDate: task.dueDate }
-    });
+      await notifyOncePerDay({
+        workspace: task.workspace,
+        recipients: task.assignedTo,
+        type: "deadline_approaching",
+        title: `Deadline Tomorrow: ${task.taskNumber}`,
+        message: `${task.title} is due tomorrow.`,
+        refModel: "Task",
+        refId: task._id,
+        actionUrl: `/tasks/${task._id}`,
+        channels: { inApp: true, email: true },
+        metadata: { taskNumber: task.taskNumber, dueDate: task.dueDate }
+      });
   }
 });
 
@@ -49,19 +49,19 @@ cron.schedule("0 8 * * *", async () => {
   });
 
   for (const task of tasks) {
-    await notify({
-      workspace: task.workspace,
-      recipients: task.assignedTo,
-      type: "task_due_today",
-      title: `Due Today: ${task.taskNumber}`,
-      message: `${task.title} is due today.`,
-      refModel: "Task",
-      refId: task._id,
-      actionUrl: `/tasks/${task._id}`,
-      priority: 'high',
-      channels: { inApp: true, email: true },
-      metadata: { taskNumber: task.taskNumber, dueDate: task.dueDate }
-    });
+      await notifyOncePerDay({
+        workspace: task.workspace,
+        recipients: task.assignedTo,
+        type: "task_due_today",
+        title: `Due Today: ${task.taskNumber}`,
+        message: `${task.title} is due today.`,
+        refModel: "Task",
+        refId: task._id,
+        actionUrl: `/tasks/${task._id}`,
+        priority: 'high',
+        channels: { inApp: true, email: true },
+        metadata: { taskNumber: task.taskNumber, dueDate: task.dueDate }
+      });
   }
 });
 
@@ -78,19 +78,19 @@ cron.schedule("0 9 * * *", async () => {
   });
 
   for (const task of tasks) {
-    await notify({
-      workspace: task.workspace,
-      recipients: task.assignedTo,
-      type: "task_overdue",
-      title: `Task Overdue: ${task.taskNumber}`,
-      message: `${task.title} is overdue.`,
-      refModel: "Task",
-      refId: task._id,
-      actionUrl: `/tasks/${task._id}`,
-      priority: 'high',
-      channels: { inApp: true, email: true, slack: true },
-      metadata: { taskNumber: task.taskNumber, dueDate: task.dueDate }
-    });
+      await notifyOncePerDay({
+        workspace: task.workspace,
+        recipients: task.assignedTo,
+        type: "task_overdue",
+        title: `Task Overdue: ${task.taskNumber}`,
+        message: `${task.title} is overdue.`,
+        refModel: "Task",
+        refId: task._id,
+        actionUrl: `/tasks/${task._id}`,
+        priority: 'high',
+        channels: { inApp: true, email: true, slack: true },
+        metadata: { taskNumber: task.taskNumber, dueDate: task.dueDate }
+      });
   }
 });
 
@@ -101,18 +101,18 @@ cron.schedule("0 10 * * *", async () => {
   for (const mom of moms) {
     const pendingUsers = mom.attendees.filter(a => a.signatureStatus === 'pending').map(a => a.user);
     if (pendingUsers.length > 0) {
-      await notify({
-        workspace: mom.workspace,
-        recipients: pendingUsers,
-        type: "mom_pending_signature",
-        title: `Signature Pending: ${mom.momNumber}`,
-        message: `Please sign the MOM: ${mom.title}`,
-        refModel: "MOM",
-        refId: mom._id,
-        actionUrl: `/mom/${mom._id}`,
-        channels: { inApp: true, email: true },
-        metadata: { momNumber: mom.momNumber, momTitle: mom.title }
-      });
+        await notifyOncePerDay({
+          workspace: mom.workspace,
+          recipients: pendingUsers,
+          type: "mom_pending_signature",
+          title: `Signature Pending: ${mom.momNumber}`,
+          message: `Please sign the MOM: ${mom.title}`,
+          refModel: "MOM",
+          refId: mom._id,
+          actionUrl: `/mom/${mom._id}`,
+          channels: { inApp: true, email: true },
+          metadata: { momNumber: mom.momNumber, momTitle: mom.title }
+        });
     }
   }
 });

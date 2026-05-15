@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import * as z from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -29,6 +30,7 @@ const zodResolver = (schema) => (values) => {
 
 const Login = () => {
   const { setAuth } = useAuthStore();
+  const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState('');
 
   const {
@@ -41,12 +43,13 @@ const Login = () => {
 
   const mutation = useMutation({
     mutationFn: (data) => authService.login(data.email, data.password),
-    onSuccess: (data) => {
-      setAuth(data.data.user, { accessToken: data.data.accessToken, refreshToken: data.data.refreshToken });
+    onSuccess: async (data) => {
+      await setAuth(data.user, { accessToken: data.accessToken, refreshToken: data.refreshToken });
       toast.success('Login successful');
+      navigate('/dashboard');
     },
     onError: (error) => {
-      setErrorMsg(error.response?.data?.message || 'Failed to login');
+      setErrorMsg(error.response?.data?.message || 'Login failed. Please try again.');
       toast.error('Login failed');
     },
   });

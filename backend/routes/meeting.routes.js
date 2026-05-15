@@ -8,6 +8,8 @@ router.use(verifyWorkspaceAccess);
 router.use(checkModuleEnabled('meetings'));
 
 router.post('/check-conflict', checkPermission('meetings', 'view'), ctrl.checkConflict);
+router.get('/report', checkPermission('meetings', 'view'), ctrl.getMeetingReport);
+router.get('/kickoff/suggest-date', checkPermission('meetings', 'create'), ctrl.suggestKickoffDate);
 
 router.route('/')
   .get(checkPermission('meetings', 'view'), ctrl.getMeetings)

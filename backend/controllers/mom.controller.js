@@ -3,9 +3,7 @@ const MOM = require('../models/MOM');
 const { syncMOMEvent } = require('../services/calendar.service');
 
 const getAll = asyncHandler(async (req, res) => {
-  const query = {};
-  if (req.params.wid || req.query.workspace) query.workspace = req.params.wid || req.query.workspace;
-  const moms = await MOM.find(query).sort({ meetingDate: -1 });
+  const moms = await MOM.find({ workspace: req.workspace._id }).sort({ meetingDate: -1 });
   res.json({ success: true, moms, data: moms });
 });
 
@@ -24,14 +22,14 @@ const create = asyncHandler(async (req, res) => {
 });
 
 const getById = asyncHandler(async (req, res) => {
-  const mom = await MOM.findById(req.params.id);
+  const mom = await MOM.findOne({ _id: req.params.id, workspace: req.workspace._id });
   if (!mom) return res.status(404).json({ success: false, message: 'MOM not found' });
   res.json({ success: true, mom, data: mom });
 });
 
 const update = asyncHandler(async (req, res) => {
-  const mom = await MOM.findByIdAndUpdate(
-    req.params.id,
+  const mom = await MOM.findOneAndUpdate(
+    { _id: req.params.id, workspace: req.workspace._id },
     { ...req.body, updatedBy: req.user._id },
     { new: true, runValidators: true }
   );
@@ -42,7 +40,7 @@ const update = asyncHandler(async (req, res) => {
 });
 
 const remove = asyncHandler(async (req, res) => {
-  const mom = await MOM.findById(req.params.id);
+  const mom = await MOM.findOne({ _id: req.params.id, workspace: req.workspace._id });
   if (!mom) return res.status(404).json({ success: false, message: 'MOM not found' });
 
   const CalendarEvent = require('../models/CalendarEvent');

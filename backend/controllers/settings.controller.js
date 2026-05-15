@@ -70,6 +70,19 @@ const testGoogleMeet = asyncHandler(async (req, res) => {
   res.json({ success: true, data: result });
 });
 
+const getGoogleMeetAuthUrl = asyncHandler(async (req, res) => {
+  const url = await googleMeetService.getGoogleMeetAuthUrl(req.params.wid);
+  res.json({ success: true, data: { url } });
+});
+
+const googleMeetCallback = asyncHandler(async (req, res) => {
+  const workspaceId = req.query.state || req.params.wid;
+  const code = req.query.code;
+  if (!code) return res.status(400).json({ success: false, message: 'Authorization code missing' });
+  const result = await googleMeetService.handleGoogleMeetCallback({ workspace: workspaceId, code });
+  res.json({ success: true, message: 'Google Meet connected successfully', data: result });
+});
+
 const disconnectGoogleMeet = asyncHandler(async (req, res) => {
   const settings = await SystemSettings.findOneAndUpdate(
     { workspace: req.params.wid },
@@ -89,5 +102,7 @@ module.exports = {
   getGoogleMeetSettings,
   updateGoogleMeetSettings,
   testGoogleMeet,
+  getGoogleMeetAuthUrl,
+  googleMeetCallback,
   disconnectGoogleMeet
 };

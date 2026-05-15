@@ -25,10 +25,8 @@ module.exports = function calendarReminderJob() {
               if (reminder.sent) continue;
 
               const reminderTime = dayjs(event.startDate).subtract(reminder.minutesBefore, "minute").toDate();
-              const reminderWindow = dayjs(reminderTime).add(1, "minute").toDate();
-
-              if (now >= reminderTime && now <= reminderWindow) {
-                const assignedUsers = event.assignedTo || [];
+              if (now >= reminderTime) {
+                const assignedUsers = event.assignedTo?.length ? event.assignedTo : [event.createdBy].filter(Boolean);
 
                 await notificationService.notifyOncePerDay({
                   workspace: event.workspace,
@@ -48,6 +46,7 @@ module.exports = function calendarReminderJob() {
                 });
 
                 reminder.sent = true;
+                reminder.sentAt = now;
                 await event.save();
                 successCount++;
               }

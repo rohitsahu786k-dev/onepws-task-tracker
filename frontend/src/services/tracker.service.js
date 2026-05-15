@@ -53,3 +53,68 @@ export const deleteTrackerRow = async (workspaceId, rowId) => {
   const { data } = await api.delete(`/workspaces/${workspaceId}/tracker/rows/${rowId}`);
   return data;
 };
+
+export const submitTrackerRow = async (workspaceId, rowId) => {
+  const { data } = await api.patch(`/workspaces/${workspaceId}/tracker/rows/${rowId}/submit`);
+  return data;
+};
+
+export const lockTrackerRow = async (workspaceId, rowId) => {
+  const { data } = await api.patch(`/workspaces/${workspaceId}/tracker/rows/${rowId}/lock`);
+  return data;
+};
+
+export const unlockTrackerRow = async (workspaceId, rowId) => {
+  const { data } = await api.patch(`/workspaces/${workspaceId}/tracker/rows/${rowId}/unlock`);
+  return data;
+};
+
+export const reorderTrackerFields = async (workspaceId, configId, reorderData) => {
+  const { data } = await api.patch(`/workspaces/${workspaceId}/tracker/config/reorder`, { configId, reorderData });
+  return data;
+};
+
+export const importTrackerRows = async (workspaceId, file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await api.post(`/workspaces/${workspaceId}/tracker/import`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+};
+
+export const getTrackerSummary = async (workspaceId, filters = {}) => {
+  const { data } = await api.get(`/workspaces/${workspaceId}/tracker/reports/summary`, { params: filters });
+  return data;
+};
+
+const downloadBlob = async (request, fileName) => {
+  const response = await request();
+  const blob = new Blob([response.data], { type: response.headers['content-type'] });
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = href;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(href);
+};
+
+export const downloadTrackerTemplate = (workspaceId) =>
+  downloadBlob(
+    () => api.get(`/workspaces/${workspaceId}/tracker/template`, { responseType: 'blob' }),
+    'daily-tracker-template.xlsx'
+  );
+
+export const exportTrackerExcel = (workspaceId, filters = {}) =>
+  downloadBlob(
+    () => api.post(`/workspaces/${workspaceId}/tracker/export/excel`, { filters }, { responseType: 'blob' }),
+    'daily-tracker-export.xlsx'
+  );
+
+export const exportTrackerPdf = (workspaceId, filters = {}) =>
+  downloadBlob(
+    () => api.post(`/workspaces/${workspaceId}/tracker/export/pdf`, { filters }, { responseType: 'blob' }),
+    'daily-tracker-summary.pdf'
+  );

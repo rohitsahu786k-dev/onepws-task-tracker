@@ -73,6 +73,18 @@ function checkRole(allowedRoles = []) {
   };
 }
 
+function checkGlobalRole(allowedRoles = []) {
+  return function (req, res, next) {
+    if (isSuperAdmin(req.user)) return next();
+    const normalizedAllowed = allowedRoles.map(normalizeRole);
+    const globalRole = normalizeRole(req.user?.role);
+    if (!normalizedAllowed.includes(globalRole)) {
+      return permissionDenied(res, 'You do not have permission to perform this action');
+    }
+    next();
+  };
+}
+
 function requireMinimumRole(requiredRole) {
   return function (req, res, next) {
     const userRole = isSuperAdmin(req.user) ? 'super_admin' : normalizeRole(req.workspaceRole);
@@ -123,6 +135,7 @@ module.exports = {
   verifyToken: protect,
   verifyWorkspaceAccess,
   checkRole,
+  checkGlobalRole,
   requireMinimumRole,
   checkModuleEnabled,
   checkPermission

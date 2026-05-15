@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const dayjs = require("dayjs");
 const Task = require("../models/Task");
 const notificationService = require("../services/notification.service");
-// const calendarService = require("../services/calendar.service"); // Assuming a calendar.service exists
+const { markTaskEventOverdue, markOverdueEvents } = require("../services/calendar.service");
 const { runJobWithLog } = require("./cronUtils");
 
 module.exports = function overdueTaskJob() {
@@ -30,9 +30,7 @@ module.exports = function overdueTaskJob() {
             task.delayStatus = "delayed";
             await task.save();
 
-            // if (calendarService.markTaskEventOverdue) {
-            //   await calendarService.markTaskEventOverdue(task);
-            // }
+            await markTaskEventOverdue(task);
 
             await notificationService.notifyOncePerDay({
               workspace: task.workspace,
@@ -54,6 +52,7 @@ module.exports = function overdueTaskJob() {
           }
         }
 
+        await markOverdueEvents();
         return { processedCount: tasks.length, successCount, failedCount };
       });
     },

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarPlus, ExternalLink } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
@@ -8,9 +9,11 @@ import MeetingStatusBadge from '../../components/meetings/MeetingStatusBadge';
 const MeetingList = () => {
   const { workspace } = useAuthStore();
   const workspaceId = workspace?._id;
+  const [filters, setFilters] = useState({ status: '', meetingType: '', meetingMode: '' });
+  const queryParams = useMemo(() => Object.fromEntries(Object.entries(filters).filter(([, value]) => value)), [filters]);
   const { data, isLoading } = useQuery({
-    queryKey: ['meetings', workspaceId],
-    queryFn: () => meetingApi.getMeetings(workspaceId),
+    queryKey: ['meetings', workspaceId, queryParams],
+    queryFn: () => meetingApi.getMeetings(workspaceId, queryParams),
     enabled: Boolean(workspaceId)
   });
   const meetings = data?.data || [];
@@ -22,10 +25,19 @@ const MeetingList = () => {
           <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Meetings</h1>
           <p className="text-sm text-slate-500">Schedule kickoff, review, client, vendor, and MOM discussion meetings.</p>
         </div>
-        <Link to="/meetings/new" className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-950">
-          <CalendarPlus size={16} /> Create Meeting
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/meetings/calendar" className="rounded-md border px-3 py-2 text-sm">Calendar View</Link>
+          <Link to="/meetings/new" className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-950">
+            <CalendarPlus size={16} /> Create Meeting
+          </Link>
+        </div>
       </div>
+
+      <section className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 md:grid-cols-3">
+        <FilterSelect label="Status" value={filters.status} onChange={(value) => setFilters((prev) => ({ ...prev, status: value }))} options={['', 'scheduled', 'rescheduled', 'completed', 'cancelled', 'no_show']} />
+        <FilterSelect label="Type" value={filters.meetingType} onChange={(value) => setFilters((prev) => ({ ...prev, meetingType: value }))} options={['', 'kickoff', 'internal', 'client', 'vendor', 'design_review', 'sla_review', 'budget_review', 'project_review', 'mom_discussion', 'general']} />
+        <FilterSelect label="Mode" value={filters.meetingMode} onChange={(value) => setFilters((prev) => ({ ...prev, meetingMode: value }))} options={['', 'physical', 'zoom', 'google_meet', 'manual_link', 'hybrid']} />
+      </section>
 
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
         <div className="overflow-x-auto">
@@ -67,5 +79,14 @@ const MeetingList = () => {
     </main>
   );
 };
+
+const FilterSelect = ({ label, value, onChange, options }) => (
+  <label className="block text-sm">
+    <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">{label}</span>
+    <select value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-md border px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+      {options.map((option) => <option key={option || 'all'} value={option}>{option ? option.replace(/_/g, ' ') : 'All'}</option>)}
+    </select>
+  </label>
+);
 
 export default MeetingList;

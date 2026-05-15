@@ -27,7 +27,15 @@ const schema = new mongoose.Schema({
   task: { type: mongoose.Schema.Types.ObjectId, ref: "Task" },
   isSystemGenerated: { type: Boolean, default: false },
   isEditable: { type: Boolean, default: true },
-  isRecurring: Boolean,
+  isActive: { type: Boolean, default: true },
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: Date,
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  location: String,
+  isRecurring: { type: Boolean, default: false },
+  parentEvent: { type: mongoose.Schema.Types.ObjectId, ref: "CalendarEvent" },
+  isRecurringInstance: { type: Boolean, default: false },
+  recurrenceIndex: Number,
   recurrenceRule: {
     frequency: { type: String, enum: ["daily", "weekly", "monthly", "yearly"] },
     interval: Number,
@@ -62,5 +70,7 @@ const schema = new mongoose.Schema({
 schema.index({ workspace: 1, startDate: 1, endDate: 1 });
 schema.index({ workspace: 1, refModel: 1, refId: 1, eventType: 1 });
 schema.index({ workspace: 1, assignedTo: 1, startDate: 1 });
+schema.index({ workspace: 1, eventType: 1, status: 1, startDate: 1 });
+schema.index({ workspace: 1, parentEvent: 1, startDate: 1 });
 
 module.exports = mongoose.models.CalendarEvent || mongoose.model('CalendarEvent', schema);

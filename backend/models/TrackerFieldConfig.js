@@ -33,4 +33,7 @@ const schema = new mongoose.Schema({
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
 }, { timestamps: true });
 
+schema.index({ workspace: 1, isDefault: 1 });
+schema.index({ workspace: 1, isActive: 1 });
+
 module.exports = mongoose.models.TrackerFieldConfig || mongoose.model('TrackerFieldConfig', schema);

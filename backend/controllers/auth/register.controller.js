@@ -11,7 +11,7 @@ const register = asyncHandler(async (req, res) => {
   }
 
   const assignedRole =
-    req.user?.role === "super_admin" ? role || "employee" : "employee";
+    req.user?.role === "super_admin" ? role || "member" : "member";
 
   const user = await User.create({ name, email, password, role: assignedRole });
 

@@ -25,6 +25,11 @@ export const updateGoogleMeetSettings = async (workspaceId, payload) => {
   return data;
 };
 
+export const getGoogleMeetAuthUrl = async (workspaceId) => {
+  const { data } = await api.get(`/workspaces/${workspaceId}/settings/google-meet/auth-url`);
+  return data;
+};
+
 export const testGoogleMeetSettings = async (workspaceId) => {
   const { data } = await api.post(`/workspaces/${workspaceId}/settings/google-meet/test`);
   return data;

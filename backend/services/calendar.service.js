@@ -1,5 +1,7 @@
 const CalendarEvent = require('../models/CalendarEvent');
 const { notify } = require('./notification.service');
+const { writeCalendarAudit } = require('./calendarAudit.service');
+const dayjs = require('dayjs');
 
 const EVENT_COLORS = {
   task: '#2563eb',
@@ -48,12 +50,41 @@ const syncSystemEvent = async (query, updateData) => {
 
   if (existing) {
     if (existing.status === 'cancelled' && updateData.status !== 'cancelled') return existing;
+    const oldValue = {
+      title: existing.title,
+      startDate: existing.startDate,
+      endDate: existing.endDate,
+      status: existing.status,
+      assignedTo: existing.assignedTo,
+    };
     Object.assign(existing, payload);
     await existing.save();
+    await writeCalendarAudit({
+      workspace: existing.workspace,
+      action: 'source_sync_updated',
+      eventId: existing._id,
+      description: `Source sync updated ${existing.title}`,
+      oldValue,
+      newValue: {
+        title: existing.title,
+        startDate: existing.startDate,
+        endDate: existing.endDate,
+        status: existing.status,
+        assignedTo: existing.assignedTo,
+      },
+    });
     return existing;
   }
 
-  return CalendarEvent.create({ ...query, ...payload });
+  const event = await CalendarEvent.create({ ...query, ...payload });
+  await writeCalendarAudit({
+    workspace: event.workspace,
+    action: 'source_sync_created',
+    eventId: event._id,
+    description: `Source sync created ${event.title}`,
+    newValue: { eventType: event.eventType, refModel: event.refModel, refId: event.refId },
+  });
+  return event;
 };
 
 const syncTaskEvent = async (task) => {
@@ -244,6 +275,41 @@ const cancelSLAEvents = async (slaTrackerId, reason) => {
   );
 };
 
+const updateSLAPhaseEvent = async (slaTracker, phase, task) => {
+  if (!slaTracker?._id || !phase?.phaseKey || !phase?.plannedEndDate) return null;
+  const isComplete = phase.status === 'completed' || phase.actualEndDate;
+  const isOverdue = !isComplete && new Date(phase.plannedEndDate) < new Date();
+
+  return syncSystemEvent(
+    {
+      workspace: slaTracker.workspace,
+      refModel: 'SLATracker',
+      refId: slaTracker._id,
+      eventType: 'sla',
+      'metadata.phaseKey': phase.phaseKey,
+    },
+    {
+      title: `SLA: ${phase.phaseName || phase.phaseKey} Due - ${task?.taskNumber || ''}`.trim(),
+      startDate: phase.plannedEndDate,
+      endDate: phase.plannedEndDate,
+      allDay: true,
+      status: isComplete ? 'completed' : isOverdue ? 'overdue' : 'pending',
+      priority: isOverdue ? 'high' : 'medium',
+      assignedTo: task?.assignedTo || [],
+      project: task?.project,
+      task: task?._id,
+      metadata: {
+        source: 'sla',
+        phaseKey: phase.phaseKey,
+        phaseName: phase.phaseName,
+        taskNumber: task?.taskNumber,
+        sourceStatus: phase.status,
+        actualCompletionDate: phase.actualEndDate,
+      },
+    }
+  );
+};
+
 const syncBudgetEvent = async (budget) => {
   const targetDate = budget.reviewDate || budget.approvalDeadline || budget.closingDate || budget.endDate;
   if (!targetDate) return null;
@@ -324,11 +390,19 @@ const syncHolidayEvent = async (holiday) => {
 };
 
 const markEventCompleted = async (workspaceId, eventId, userId) => {
-  return CalendarEvent.findOneAndUpdate(
+  const event = await CalendarEvent.findOneAndUpdate(
     { _id: eventId, workspace: workspaceId },
     { status: 'completed', updatedBy: userId, 'metadata.actualCompletionDate': new Date() },
     { new: true }
   );
+  await writeCalendarAudit({
+    workspace: workspaceId,
+    user: userId,
+    action: 'event_completed',
+    eventId,
+    description: event ? `Calendar event completed: ${event.title}` : 'Calendar event completed',
+  });
+  return event;
 };
 
 const markOverdueEvents = async (workspaceId) => {
@@ -340,6 +414,136 @@ const markOverdueEvents = async (workspaceId) => {
   if (workspaceId) query.workspace = workspaceId;
 
   return CalendarEvent.updateMany(query, { status: 'overdue' });
+};
+
+const markTaskEventOverdue = async (task) => {
+  if (!task?._id) return null;
+  return CalendarEvent.findOneAndUpdate(
+    { workspace: task.workspace, refModel: 'Task', refId: task._id, eventType: 'task', status: { $nin: ['completed', 'cancelled'] } },
+    { status: 'overdue', priority: task.priority || 'high' },
+    { new: true }
+  );
+};
+
+const getNextOccurrenceDate = (current, rule) => {
+  const interval = Math.max(Number(rule?.interval) || 1, 1);
+  const frequency = rule?.frequency || 'weekly';
+  return dayjs(current).add(interval, frequency).toDate();
+};
+
+const generateRecurringInstances = async (parentEvent, horizonDays = 90) => {
+  if (!parentEvent?.isRecurring || !parentEvent?.recurrenceRule?.frequency) return [];
+
+  const rule = parentEvent.recurrenceRule;
+  const horizonEnd = dayjs().add(horizonDays, 'day').endOf('day');
+  const durationMinutes = Math.max(dayjs(parentEvent.endDate || parentEvent.startDate).diff(dayjs(parentEvent.startDate), 'minute'), 0);
+  const existingCount = await CalendarEvent.countDocuments({ parentEvent: parentEvent._id });
+  let generated = 0;
+  const maxOccurrences = Number(rule.maxOccurrences) || 24;
+
+  const lastInstance = await CalendarEvent.findOne({ parentEvent: parentEvent._id }).sort({ startDate: -1 });
+  let nextStart = lastInstance
+    ? getNextOccurrenceDate(lastInstance.startDate, rule)
+    : getNextOccurrenceDate(parentEvent.startDate, rule);
+
+  while (
+    dayjs(nextStart).isBefore(horizonEnd)
+    && (!rule.endDate || dayjs(nextStart).isSame(dayjs(rule.endDate), 'day') || dayjs(nextStart).isBefore(dayjs(rule.endDate)))
+    && existingCount + generated < maxOccurrences
+  ) {
+    const exists = await CalendarEvent.findOne({ parentEvent: parentEvent._id, startDate: nextStart });
+    if (!exists) {
+      await CalendarEvent.create({
+        workspace: parentEvent.workspace,
+        title: parentEvent.title,
+        description: parentEvent.description,
+        eventType: parentEvent.eventType,
+        startDate: nextStart,
+        endDate: dayjs(nextStart).add(durationMinutes, 'minute').toDate(),
+        allDay: parentEvent.allDay,
+        color: parentEvent.color,
+        status: parentEvent.status,
+        priority: parentEvent.priority,
+        assignedTo: parentEvent.assignedTo,
+        department: parentEvent.department,
+        project: parentEvent.project,
+        task: parentEvent.task,
+        location: parentEvent.location,
+        reminders: (parentEvent.reminders || []).map((reminder) => ({
+          minutesBefore: reminder.minutesBefore,
+          channel: reminder.channel,
+          sent: false,
+        })),
+        isSystemGenerated: false,
+        isEditable: true,
+        isRecurring: false,
+        isRecurringInstance: true,
+        parentEvent: parentEvent._id,
+        recurrenceIndex: existingCount + generated + 1,
+        createdBy: parentEvent.createdBy,
+        metadata: { ...mapToObject(parentEvent.metadata), source: 'recurring_event' },
+      });
+      generated += 1;
+    }
+    nextStart = getNextOccurrenceDate(nextStart, rule);
+  }
+
+  return CalendarEvent.find({ parentEvent: parentEvent._id }).sort({ startDate: 1 });
+};
+
+const getCalendarMetrics = async (workspaceId, filters = {}) => {
+  const start = filters.start ? new Date(filters.start) : dayjs().startOf('month').toDate();
+  const end = filters.end ? new Date(filters.end) : dayjs().endOf('month').toDate();
+  const query = {
+    workspace: workspaceId,
+    isDeleted: { $ne: true },
+    startDate: { $lte: end },
+    endDate: { $gte: start },
+  };
+  if (filters.showCancelled !== 'true') query.status = { $ne: 'cancelled' };
+
+  const events = await CalendarEvent.find(query).lean();
+  const byType = {};
+  const byStatus = {};
+  const byDepartment = {};
+  const byUser = {};
+  const byDate = {};
+  let overdueEvents = 0;
+  let completedEvents = 0;
+  let upcoming7Days = 0;
+  const sevenDaysEnd = dayjs().add(7, 'day').endOf('day');
+
+  events.forEach((event) => {
+    byType[event.eventType] = (byType[event.eventType] || 0) + 1;
+    byStatus[event.status] = (byStatus[event.status] || 0) + 1;
+    if (event.department) byDepartment[String(event.department)] = (byDepartment[String(event.department)] || 0) + 1;
+    (event.assignedTo || []).forEach((userId) => {
+      byUser[String(userId)] = (byUser[String(userId)] || 0) + 1;
+    });
+    const dateKey = dayjs(event.startDate).format('YYYY-MM-DD');
+    byDate[dateKey] = (byDate[dateKey] || 0) + 1;
+    if (event.status === 'overdue') overdueEvents += 1;
+    if (event.status === 'completed') completedEvents += 1;
+    if (dayjs(event.startDate).isAfter(dayjs().startOf('day')) && dayjs(event.startDate).isBefore(sevenDaysEnd)) upcoming7Days += 1;
+  });
+
+  const mostOverloadedDate = Object.entries(byDate).sort((a, b) => b[1] - a[1])[0] || null;
+
+  return {
+    totalEvents: events.length,
+    taskEvents: byType.task || 0,
+    meetingEvents: byType.meeting || 0,
+    slaEvents: byType.sla || 0,
+    overdueEvents,
+    completedEvents,
+    upcoming7Days,
+    byType,
+    byStatus,
+    byDepartment,
+    byUser,
+    heatmap: byDate,
+    mostOverloadedDate: mostOverloadedDate ? { date: mostOverloadedDate[0], count: mostOverloadedDate[1] } : null,
+  };
 };
 
 const sendCalendarReminders = async () => {
@@ -391,11 +595,15 @@ module.exports = {
   syncMeetingEvent,
   syncMOMEvent,
   syncSLAEvents,
+  updateSLAPhaseEvent,
   cancelSLAEvents,
   syncBudgetEvent,
   syncExpenseEvent,
   syncHolidayEvent,
   sendCalendarReminders,
   markEventCompleted,
+  markTaskEventOverdue,
   markOverdueEvents,
+  generateRecurringInstances,
+  getCalendarMetrics,
 };

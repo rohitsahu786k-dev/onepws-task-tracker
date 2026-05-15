@@ -26,6 +26,15 @@ const GoogleMeetSettings = () => {
     }
   };
 
+  const connectOAuth = async () => {
+    try {
+      const res = await settingsApi.getGoogleMeetAuthUrl(workspaceId);
+      if (res.data?.url) window.location.href = res.data.url;
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to start Google OAuth');
+    }
+  };
+
   return (
     <main className="mx-auto max-w-2xl space-y-5">
       <div><h1 className="text-2xl font-semibold">Google Meet Integration</h1><p className="text-sm text-slate-500">Store OAuth credentials used to create Calendar conference links.</p></div>
@@ -36,7 +45,11 @@ const GoogleMeetSettings = () => {
         <Field label="Redirect URL" value={form.redirectUri || ''} onChange={(value) => setForm({ ...form, redirectUri: value })} />
         <Field label="Refresh Token" type="password" value={form.refreshTokenEncrypted || ''} onChange={(value) => setForm({ ...form, refreshTokenEncrypted: value })} />
         <Field label="Connected Email" value={form.connectedEmail || ''} onChange={(value) => setForm({ ...form, connectedEmail: value })} />
-        <div className="flex gap-2"><button onClick={save} className="rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white">Save</button><button onClick={test} className="rounded-md border px-3 py-2 text-sm">Test Connection</button></div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={save} className="rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white">Save</button>
+          <button type="button" onClick={connectOAuth} className="rounded-md border px-3 py-2 text-sm">Connect with Google</button>
+          <button type="button" onClick={test} className="rounded-md border px-3 py-2 text-sm">Test Connection</button>
+        </div>
       </section>
     </main>
   );

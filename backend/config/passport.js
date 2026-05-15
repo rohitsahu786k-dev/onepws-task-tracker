@@ -47,7 +47,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                 name: profile.displayName,
                 avatar: profile.photos[0]?.value,
                 isVerified: true,
-                role: 'employee',
+                role: 'member',
               });
             }
           }

@@ -1,6 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
 const Task = require('../models/Task');
 const { syncTaskEvent, cancelTaskEvent } = require('../services/calendar.service');
+const { getWorkStartStatus } = require('../services/taskWorkStart.service');
 
 const getAll = asyncHandler(async (req, res) => {
   const query = {};
@@ -40,7 +41,16 @@ const create = asyncHandler(async (req, res) => {
 const getById = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
-  res.json({ success: true, task, data: task });
+  const workStart = await getWorkStartStatus(task);
+  const payload = { ...task.toObject(), ...workStart };
+  res.json({ success: true, task: payload, data: payload });
+});
+
+const getWorkStart = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+  const workStart = await getWorkStartStatus(task);
+  res.json({ success: true, data: workStart });
 });
 
 const update = asyncHandler(async (req, res) => {
@@ -54,12 +64,25 @@ const update = asyncHandler(async (req, res) => {
 });
 
 const updateStatus = asyncHandler(async (req, res) => {
+  const existing = await Task.findById(req.task?._id || req.params.id);
+  if (!existing) return res.status(404).json({ success: false, message: 'Task not found' });
+
+  if (req.body.status === 'in_process' && existing.status !== 'in_process') {
+    const workStart = await getWorkStartStatus(existing);
+    if (!workStart.canStartWork) {
+      return res.status(409).json({
+        success: false,
+        message: 'Work start blocked until kickoff meeting is completed and MOM is signed',
+        data: workStart
+      });
+    }
+  }
+
   const task = await Task.findByIdAndUpdate(
-    req.task?._id || req.params.id,
+    existing._id,
     { status: req.body.status, updatedBy: req.user._id },
     { new: true, runValidators: true }
   );
-  if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
   await syncTaskEvent(task);
   res.json({ success: true, task, data: task });
@@ -78,6 +101,7 @@ module.exports = {
   getAll,
   create,
   getById,
+  getWorkStart,
   update,
   updateStatus,
   remove,

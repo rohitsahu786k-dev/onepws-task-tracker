@@ -4,6 +4,9 @@ const meetingService = require('../services/meeting.service');
 const { checkMeetingConflicts } = require('../services/meetingConflict.service');
 const zoomService = require('../services/zoom.service');
 const googleMeetService = require('../services/googleMeet.service');
+const { getMeetingReport } = require('../services/meetingReport.service');
+const SLATracker = require('../models/SLATracker');
+const { addWorkingDays } = require('../services/workingDays.service');
 
 function buildMeetingQuery(req) {
   const query = { workspace: req.params.wid };
@@ -182,6 +185,47 @@ const addAttachment = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: meeting });
 });
 
+const getMeetingReportHandler = asyncHandler(async (req, res) => {
+  const report = await getMeetingReport(req.params.wid, req.query);
+  res.json({ success: true, data: report });
+});
+
+const suggestKickoffDate = asyncHandler(async (req, res) => {
+  const { taskId, slaTrackerId, intakeFormId } = req.query;
+  let slaTracker = null;
+
+  if (slaTrackerId) {
+    slaTracker = await SLATracker.findOne({ _id: slaTrackerId, workspace: req.params.wid });
+  } else if (taskId) {
+    const meeting = await Meeting.findOne({ workspace: req.params.wid, task: taskId, meetingType: 'kickoff' }).select('status');
+    slaTracker = await SLATracker.findOne({ workspace: req.params.wid, task: taskId }).select('t0Date kickoffMeetingDate');
+    if (meeting) {
+      return res.json({
+        success: true,
+        data: {
+          hasKickoffMeeting: true,
+          kickoffStatus: meeting.status,
+          suggestedDate: slaTracker?.t0Date ? addWorkingDays(slaTracker.t0Date, 1) : null
+        }
+      });
+    }
+  }
+
+  if (!slaTracker?.t0Date) {
+    return res.status(400).json({ success: false, message: 'T0 date must be confirmed before suggesting kickoff meeting date' });
+  }
+
+  res.json({
+    success: true,
+    data: {
+      hasKickoffMeeting: false,
+      suggestedDate: addWorkingDays(slaTracker.t0Date, 1),
+      t0Date: slaTracker.t0Date,
+      intakeFormId: intakeFormId || slaTracker.intakeForm
+    }
+  });
+});
+
 const removeAttachment = asyncHandler(async (req, res) => {
   const meeting = await Meeting.findOne({ _id: req.params.id, workspace: req.params.wid });
   if (!meeting) return res.status(404).json({ success: false, message: 'Meeting not found' });
@@ -206,5 +250,7 @@ module.exports = {
   sendInvite,
   createMOM,
   addAttachment,
-  removeAttachment
+  removeAttachment,
+  getMeetingReport: getMeetingReportHandler,
+  suggestKickoffDate
 };

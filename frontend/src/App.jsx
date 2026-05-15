@@ -71,6 +71,8 @@ import SlackSettings from './pages/settings/SlackSettings';
 import TelegramSettings from './pages/settings/TelegramSettings';
 import ZoomSettings from './pages/settings/ZoomSettings';
 import GoogleMeetSettings from './pages/settings/GoogleMeetSettings';
+import AutomationLogs from './pages/settings/AutomationLogs';
+import MeetingCalendar from './pages/meetings/MeetingCalendar';
 import EmailTemplates from './pages/settings/EmailTemplates';
 import NotificationTemplates from './pages/settings/NotificationTemplates';
 import RolePermissions from './pages/settings/RolePermissions';
@@ -140,6 +142,7 @@ function App() {
           <Route path="/media" element={<ProtectedRoute permission="media:view"><MediaLibrary /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute permission="calendar:view"><CalendarView /></ProtectedRoute>} />
           <Route path="/meetings" element={<ProtectedRoute permission="meetings:view"><MeetingList /></ProtectedRoute>} />
+          <Route path="/meetings/calendar" element={<ProtectedRoute permission="meetings:view"><MeetingCalendar /></ProtectedRoute>} />
           <Route path="/meetings/new" element={<ProtectedRoute permission="meetings:create"><CreateMeeting /></ProtectedRoute>} />
           <Route path="/meetings/:id" element={<ProtectedRoute permission="meetings:view"><MeetingDetail /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute permission="reports:view"><ReportsDashboard /></ProtectedRoute>} />
@@ -196,6 +199,7 @@ function App() {
           <Route path="/settings/telegram" element={<ProtectedRoute permission="settings:update_integrations"><TelegramSettings /></ProtectedRoute>} />
           <Route path="/settings/zoom" element={<ProtectedRoute permission="settings:update_integrations"><ZoomSettings /></ProtectedRoute>} />
           <Route path="/settings/google-meet" element={<ProtectedRoute permission="settings:update_integrations"><GoogleMeetSettings /></ProtectedRoute>} />
+          <Route path="/settings/automation" element={<ProtectedRoute permission="settings:view"><AutomationLogs /></ProtectedRoute>} />
           <Route path="/settings/email-templates" element={<ProtectedRoute permission="email_templates:view"><EmailTemplates /></ProtectedRoute>} />
           <Route path="/settings/notification-templates" element={<ProtectedRoute permission="notifications:manage"><NotificationTemplates /></ProtectedRoute>} />
           <Route path="/settings/roles" element={<ProtectedRoute permission="settings:update_roles"><RolePermissions /></ProtectedRoute>} />

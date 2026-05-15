@@ -29,7 +29,16 @@ const schema = new mongoose.Schema({
   delayStatus: { type: String, enum: ["on_time", "delayed", "early", "pending"], default: "pending" },
   estimatedHours: Number, loggedHours: Number,
   dueDate: Date, startDate: Date, completedAt: Date,
-  isOverdue: Boolean, isLocked: Boolean,
+  isOverdue: Boolean, isLocked: Boolean, isDeleted: { type: Boolean, default: false },
+  holdReason: String,
+  holdStartDate: Date,
+  feedback: {
+    required: Boolean,
+    requestedAt: Date,
+    dueAt: Date,
+    receivedAt: Date,
+    status: { type: String, enum: ['none', 'requested', 'received'], default: 'none' }
+  },
   remarkIfPending: String,
   finalStatus: { type: String, enum: ["pending", "submitted", "closed"], default: "pending" },
   tags: [String],

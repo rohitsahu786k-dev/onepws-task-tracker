@@ -1,14 +1,40 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const { protect } = require('../middleware/auth.middleware');
+const {
+  protect,
+  verifyWorkspaceAccess,
+  checkModuleEnabled,
+  checkPermission
+} = require('../middleware/auth.middleware');
 const ctrl = require('../controllers/mom.controller');
 
-router.use(protect);
+router.use(protect, verifyWorkspaceAccess);
+router.use(checkModuleEnabled('mom'));
 
-router.get('/', ctrl.getAll);
-router.post('/', ctrl.create);
-router.get('/:id', ctrl.getById);
-router.put('/:id', ctrl.update);
-router.delete('/:id', ctrl.remove);
+router.get(
+  '/',
+  checkPermission('mom', 'view'),
+  ctrl.getAll
+);
+router.post(
+  '/',
+  checkPermission('mom', 'create'),
+  ctrl.create
+);
+router.get(
+  '/:id',
+  checkPermission('mom', 'view'),
+  ctrl.getById
+);
+router.put(
+  '/:id',
+  checkPermission('mom', 'update'),
+  ctrl.update
+);
+router.delete(
+  '/:id',
+  checkPermission('mom', 'delete'),
+  ctrl.remove
+);
 
 module.exports = router;

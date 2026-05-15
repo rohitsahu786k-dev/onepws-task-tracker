@@ -18,4 +18,9 @@ const schema = new mongoose.Schema({
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
 }, { timestamps: true });
 
+schema.index({ workspace: 1, config: 1, rowNumber: 1 });
+schema.index({ workspace: 1, status: 1, isDeleted: 1 });
+schema.index({ workspace: 1, createdAt: -1 });
+schema.index({ workspace: 1, task: 1 });
+
 module.exports = mongoose.models.TrackerRow || mongoose.model('TrackerRow', schema);

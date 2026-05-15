@@ -106,22 +106,23 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/cron/jobs/:jobName/run
 const runJobManually = asyncHandler(async (req, res) => {
   const { jobName } = req.params;
-  
-  // Release lock to allow job to run
+  const { runJobByName } = require('../jobs/jobRegistry');
+
   await CronLock.findOneAndUpdate(
     { jobName },
-    { 
-      lockedUntil: null,
-      status: 'idle',
-      $unset: { errorMessage: 1 }
-    },
+    { lockedUntil: null, status: 'idle', $unset: { errorMessage: 1 } },
     { upsert: true }
   );
 
-  res.json({
-    success: true,
-    message: `Job ${jobName} lock released. The job will execute at its next scheduled time or can be triggered by server.`
-  });
+  try {
+    await runJobByName(jobName);
+    res.json({ success: true, message: `Job ${jobName} executed successfully` });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || `Failed to run job ${jobName}`
+    });
+  }
 });
 
 // @desc    Clear old cron logs

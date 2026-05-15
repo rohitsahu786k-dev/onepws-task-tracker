@@ -1,6 +1,9 @@
 const { google } = require('googleapis');
 const SystemSettings = require('../models/SystemSettings');
 const decrypt = require('../utils/decryptField');
+const encryptField = require('../utils/encryptField');
+
+const SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
 
 function getOAuthClient(settings) {
   const oauth2Client = new google.auth.OAuth2(
@@ -46,6 +49,59 @@ async function createGoogleMeet({ workspace, meeting }) {
   };
 }
 
+async function getGoogleMeetAuthUrl(workspace) {
+  const settings = await SystemSettings.findOne({ workspace });
+  if (!settings?.googleMeet?.clientId || !settings.googleMeet.clientSecretEncrypted) {
+    throw new Error('Google Meet OAuth client credentials are not configured');
+  }
+
+  const oauth2Client = new google.auth.OAuth2(
+    settings.googleMeet.clientId,
+    decrypt(settings.googleMeet.clientSecretEncrypted),
+    settings.googleMeet.redirectUri
+  );
+
+  return oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: SCOPES,
+    state: String(workspace)
+  });
+}
+
+async function handleGoogleMeetCallback({ workspace, code }) {
+  const settings = await SystemSettings.findOne({ workspace });
+  if (!settings?.googleMeet?.clientId || !settings.googleMeet.clientSecretEncrypted) {
+    throw new Error('Google Meet OAuth client credentials are not configured');
+  }
+
+  const oauth2Client = new google.auth.OAuth2(
+    settings.googleMeet.clientId,
+    decrypt(settings.googleMeet.clientSecretEncrypted),
+    settings.googleMeet.redirectUri
+  );
+
+  const { tokens } = await oauth2Client.getToken(code);
+  if (!tokens.refresh_token) {
+    throw new Error('Google did not return a refresh token. Reconnect with consent prompt.');
+  }
+
+  oauth2Client.setCredentials(tokens);
+  const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+  const profile = await oauth2.userinfo.get();
+
+  settings.googleMeet.refreshTokenEncrypted = encryptField(tokens.refresh_token);
+  settings.googleMeet.connectedEmail = profile.data.email;
+  settings.googleMeet.connectedAt = new Date();
+  settings.googleMeet.enabled = true;
+  await settings.save();
+
+  return {
+    connectedEmail: profile.data.email,
+    connectedAt: settings.googleMeet.connectedAt
+  };
+}
+
 async function testGoogleMeetConnection(workspace) {
   const settings = await SystemSettings.findOne({ workspace });
   if (!settings?.googleMeet?.enabled || !settings.googleMeet.refreshTokenEncrypted) {
@@ -58,5 +114,7 @@ async function testGoogleMeetConnection(workspace) {
 
 module.exports = {
   createGoogleMeet,
-  testGoogleMeetConnection
+  testGoogleMeetConnection,
+  getGoogleMeetAuthUrl,
+  handleGoogleMeetCallback
 };

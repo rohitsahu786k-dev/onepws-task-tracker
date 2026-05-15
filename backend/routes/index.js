@@ -51,6 +51,7 @@ const reportRoutes = require('./report.routes');
 const reportScheduleRoutes = require('./reportSchedule.routes');
 const settingsRoutes = require('./settings.routes');
 const cronRoutes = require('./cron.routes');
+const automationRoutes = require('./automation.routes');
 
 // ── Health check ──────────────────────────────────────────────────────────────
 router.get('/health', (req, res) => {
@@ -112,6 +113,7 @@ router.use('/workspaces/:wid/reports', reportRoutes);
 router.use('/workspaces/:wid/report-schedules', reportScheduleRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/workspaces/:wid/settings', settingsRoutes);
+router.use('/workspaces/:wid/automation', automationRoutes);
 router.use('/admin/cron', cronRoutes);
 
 module.exports = router;

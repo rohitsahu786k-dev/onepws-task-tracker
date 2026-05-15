@@ -14,6 +14,7 @@ router.use(protect, workspaceGate);
 
 router.get('/', checkModuleEnabled('tasks'), checkPermission('tasks', 'view'), ctrl.getAll);
 router.post('/', checkModuleEnabled('tasks'), checkPermission('tasks', 'create'), ctrl.create);
+router.get('/:id/work-start', checkModuleEnabled('tasks'), checkPermission('tasks', 'view'), ctrl.getWorkStart);
 router.get('/:id', checkModuleEnabled('tasks'), checkPermission('tasks', 'view'), ctrl.getById);
 router.put(
   '/:id',

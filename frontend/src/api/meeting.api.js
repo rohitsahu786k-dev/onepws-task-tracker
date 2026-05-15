@@ -44,3 +44,13 @@ export const sendMeetingInvite = async (workspaceId, meetingId) => {
   const { data } = await api.post(`/workspaces/${workspaceId}/meetings/${meetingId}/send-invite`);
   return data;
 };
+
+export const getMeetingReport = async (workspaceId, params = {}) => {
+  const { data } = await api.get(`/workspaces/${workspaceId}/meetings/report`, { params });
+  return data;
+};
+
+export const suggestKickoffDate = async (workspaceId, params = {}) => {
+  const { data } = await api.get(`/workspaces/${workspaceId}/meetings/kickoff/suggest-date`, { params });
+  return data;
+};

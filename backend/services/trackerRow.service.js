@@ -2,8 +2,10 @@ const TrackerRow = require('../models/TrackerRow');
 const TrackerFieldConfig = require('../models/TrackerFieldConfig');
 const Task = require('../models/Task');
 const { runAutoFormulas } = require('./trackerCalculation.service');
-const { validateRowData, checkRowLock } = require('./trackerValidation.service');
+const { validateRowData, checkRowLock, checkFieldPermission } = require('./trackerValidation.service');
 const { syncTaskEvent, syncTrackerEvent } = require('./calendar.service');
+const { notify } = require('./notification.service');
+const { writeTrackerAudit } = require('./trackerAudit.service');
 
 const mapToObject = (value) => {
   if (!value) return {};
@@ -29,6 +31,12 @@ const applyDefaults = (fields, rowData) => {
   return data;
 };
 
+const hasMeaningfulInput = (rowData = {}) => Object.entries(rowData).some(([key, value]) => {
+  if (key === 'final_status') return false;
+  if (Array.isArray(value)) return value.length > 0;
+  return value !== undefined && value !== null && value !== '';
+});
+
 const normalizeProductType = (value) => {
   const options = { cd: 'CD', ccr: 'CCR', mot: 'MOT', floor: 'FLOOR', other: 'Other' };
   return options[String(value || '').toLowerCase()];
@@ -40,6 +48,8 @@ const normalizeProductType = (value) => {
 const syncTaskFromRow = async (row, calculatedData, workspaceId, user) => {
   const rowData = mapToObject(row.rowData);
   let taskDoc = null;
+  if (!hasMeaningfulInput(rowData)) return null;
+
   if (!row.task && calculatedData.task_number) {
     const newTask = await Task.create({
       workspace: workspaceId,
@@ -88,7 +98,7 @@ const syncTaskFromRow = async (row, calculatedData, workspaceId, user) => {
 /**
  * Upsert Tracker Row
  */
-const upsertRow = async (workspaceId, configId, rowId, rowData, user) => {
+const upsertRow = async (workspaceId, configId, rowId, rowData, user, options = {}) => {
   const config = await TrackerFieldConfig.findOne({ _id: configId, workspace: workspaceId });
   if (!config) throw new Error('Tracker Config not found');
 
@@ -101,16 +111,22 @@ const upsertRow = async (workspaceId, configId, rowId, rowData, user) => {
 
   let rowNumber = row?.rowNumber;
   if (!rowNumber) {
-    const lastRow = await TrackerRow.findOne({ config: configId }).sort({ rowNumber: -1 });
+    const lastRow = await TrackerRow.findOne({ workspace: workspaceId, config: configId }).sort({ rowNumber: -1 });
     rowNumber = (lastRow?.rowNumber || 0) + 1;
   }
 
+  const meaningfulInput = hasMeaningfulInput(rowData);
   const incomingData = applyDefaults(config.fields, rowData);
-  validateRowData(config.fields, incomingData, row || {});
+  validateRowData(config.fields, incomingData, row || {}, {
+    enforceRequired: options.enforceRequired ?? (meaningfulInput || incomingData.final_status === 'submitted'),
+    isFinalSubmit: incomingData.final_status === 'submitted',
+  });
 
   const calculatedData = await runAutoFormulas(workspaceId, row, incomingData, config.fields, rowNumber);
   const mergedRowData = { ...mapToObject(row?.rowData), ...incomingData };
   const isSubmitted = mergedRowData.final_status === 'submitted';
+  const isClosed = mergedRowData.final_status === 'closed';
+  const isDraft = !hasMeaningfulInput(mergedRowData);
 
   const updatePayload = {
     workspace: workspaceId,
@@ -118,8 +134,8 @@ const upsertRow = async (workspaceId, configId, rowId, rowData, user) => {
     rowNumber,
     rowData: mergedRowData,
     calculatedData,
-    status: isSubmitted ? 'submitted' : 'pending',
-    isLocked: isSubmitted,
+    status: isDraft ? 'draft' : isSubmitted ? 'submitted' : isClosed ? 'locked' : 'pending',
+    isLocked: isSubmitted || isClosed,
     updatedBy: user._id,
   };
 
@@ -133,17 +149,53 @@ const upsertRow = async (workspaceId, configId, rowId, rowData, user) => {
   if (!rowId) {
     updatePayload.createdBy = user._id;
     row = await TrackerRow.create(updatePayload);
+    await writeTrackerAudit({
+      workspace: workspaceId,
+      user: user._id,
+      action: 'row_created',
+      rowId: row._id,
+      newValue: { rowNumber, rowData: mergedRowData, calculatedData },
+      description: `Tracker row #${rowNumber} created`,
+    });
   } else {
+    const oldRowData = mapToObject(row.rowData);
     row = await TrackerRow.findByIdAndUpdate(rowId, updatePayload, { new: true });
+    await writeTrackerAudit({
+      workspace: workspaceId,
+      user: user._id,
+      action: isSubmitted ? 'row_submitted' : 'row_updated',
+      rowId: row._id,
+      oldValue: oldRowData,
+      newValue: mergedRowData,
+      description: `Tracker row #${rowNumber} updated`,
+    });
   }
 
   // Sync with Calendar/Tasks
-  await syncTaskFromRow(row, calculatedData, workspaceId, user);
-  if (row.task) {
-    const task = await Task.findById(row.task);
-    await syncTaskEvent(task);
+  if (!isDraft) {
+    const taskDoc = await syncTaskFromRow(row, calculatedData, workspaceId, user);
+    if (row.task) {
+      const task = taskDoc || await Task.findById(row.task);
+      await syncTaskEvent(task);
+    }
+    await syncTrackerEvent(row);
+
+    if (!rowId && mergedRowData.task_handled_by) {
+      await notify({
+        workspace: workspaceId,
+        sender: user._id,
+        recipients: [mergedRowData.task_handled_by],
+        type: 'tracker_task_assigned',
+        title: `New Marketing Tracker Task Assigned: ${calculatedData.task_number || `#${rowNumber}`}`,
+        message: `${calculatedData.task_number || `Tracker row #${rowNumber}`} has been assigned to you.`,
+        refModel: 'TrackerRow',
+        refId: row._id,
+        actionUrl: '/tracker',
+        channels: { inApp: true },
+        metadata: { taskNumber: calculatedData.task_number, rowNumber },
+      });
+    }
   }
-  await syncTrackerEvent(row);
 
   return { row, recalculatedFields: calculatedData };
 };
@@ -162,10 +214,31 @@ const updateCell = async (workspaceId, rowId, fieldKey, value, user) => {
   if (!fieldConfig) throw new Error('Field does not exist');
   if (fieldConfig.fieldType === 'auto') throw new Error('Cannot manually edit an auto-calculated field');
   if (fieldConfig.isEditable === false) throw new Error('This field is read-only');
+  checkFieldPermission(fieldConfig, user);
 
   const newRowData = { [fieldKey]: value };
+  validateRowData(config.fields, newRowData, row, {
+    enforceRequired: false,
+    validateOnlyKeys: [fieldKey],
+  });
+  const oldRowData = mapToObject(row.rowData);
+  const oldValue = oldRowData[fieldKey];
   
-  return upsertRow(workspaceId, config._id, rowId, newRowData, user);
+  const result = await upsertRow(workspaceId, config._id, rowId, newRowData, user, {
+    enforceRequired: value === 'submitted' && fieldKey === 'final_status',
+  });
+  await writeTrackerAudit({
+    workspace: workspaceId,
+    user: user._id,
+    action: 'cell_updated',
+    rowId,
+    fieldKey,
+    oldValue,
+    newValue: value,
+    description: `Tracker cell '${fieldKey}' updated`,
+  });
+
+  return result;
 };
 
 module.exports = {

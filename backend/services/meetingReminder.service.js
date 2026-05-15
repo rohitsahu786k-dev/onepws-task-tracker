@@ -1,5 +1,4 @@
 const dayjs = require('dayjs');
-const cron = require('node-cron');
 const Meeting = require('../models/Meeting');
 const { notify } = require('./notification.service');
 const { getMeetingLink } = require('./meetingEmail.service');
@@ -49,9 +48,5 @@ async function sendMeetingReminders() {
     if (changed) await meeting.save();
   }
 }
-
-cron.schedule('*/5 * * * *', () => {
-  sendMeetingReminders().catch((error) => console.error('Meeting reminder cron failed', error));
-});
 
 module.exports = { sendMeetingReminders };

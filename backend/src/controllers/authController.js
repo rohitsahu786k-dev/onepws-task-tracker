@@ -16,9 +16,9 @@ const register = async (req, res, next) => {
     }
 
     // Only super_admin can create admin/manager accounts
-    const allowedRoles = ['employee', 'client'];
+    const allowedRoles = ['member', 'client'];
     const assignedRole =
-      req.user?.role === 'super_admin' ? role || 'employee' : 'employee';
+      req.user?.role === 'super_admin' ? role || 'member' : 'member';
 
     if (!allowedRoles.includes(assignedRole) && req.user?.role !== 'super_admin') {
       return res.status(403).json({ success: false, message: 'Insufficient permissions.' });

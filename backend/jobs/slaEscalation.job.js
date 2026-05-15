@@ -52,23 +52,28 @@ module.exports = function slaEscalationJob() {
                   status: "pending"
                 });
 
-                await notificationService.notifyOncePerDay({
-                  workspace: tracker.workspace,
-                  recipients: [tracker.task.projectManager],
-                  type: "sla_escalation_level1",
-                  refModel: "SLATracker",
-                  refId: tracker._id,
-                  title: `SLA Escalation Level 1: ${tracker.task.taskNumber}`,
-                  message: `${tracker.task.title} is delayed by ${maxDelayDays} day(s).`,
-                  actionUrl: `/tasks/${tracker.task._id}`,
-                  priority: "high",
-                  channels: { inApp: true, email: true, slack: true },
-                  metadata: {
-                    taskNumber: tracker.task.taskNumber,
-                    delayDays: maxDelayDays,
-                    escalationLevel: 1
-                  }
-                });
+                const taskForLevel1 = await Task.findById(tracker.task._id).populate("department");
+                const deptHead = taskForLevel1?.department?.head;
+
+                if (deptHead) {
+                  await notificationService.notifyOncePerDay({
+                    workspace: tracker.workspace,
+                    recipients: [deptHead],
+                    type: "sla_escalation",
+                    refModel: "SLATracker",
+                    refId: tracker._id,
+                    title: `SLA Escalation Level 1: ${tracker.task.taskNumber}`,
+                    message: `${tracker.task.title} is delayed by ${maxDelayDays} day(s).`,
+                    actionUrl: `/tasks/${tracker.task._id}`,
+                    priority: "high",
+                    channels: { inApp: true, email: true, slack: true },
+                    metadata: {
+                      taskNumber: tracker.task.taskNumber,
+                      delayDays: maxDelayDays,
+                      escalationLevel: 1
+                    }
+                  });
+                }
 
                 successCount++;
               }
@@ -97,23 +102,25 @@ module.exports = function slaEscalationJob() {
                   status: "pending"
                 });
 
-                await notificationService.notifyOncePerDay({
-                  workspace: tracker.workspace,
-                  recipients: [deptHead],
-                  type: "sla_escalation_level2",
-                  refModel: "SLATracker",
-                  refId: tracker._id,
-                  title: `SLA Escalation Level 2: ${tracker.task.taskNumber}`,
-                  message: `${tracker.task.title} is delayed by ${maxDelayDays} day(s). Escalated to Department Head.`,
-                  actionUrl: `/tasks/${tracker.task._id}`,
-                  priority: "urgent",
-                  channels: { inApp: true, email: true, slack: true },
-                  metadata: {
-                    taskNumber: tracker.task.taskNumber,
-                    delayDays: maxDelayDays,
-                    escalationLevel: 2
-                  }
-                });
+                if (deptHead) {
+                  await notificationService.notifyOncePerDay({
+                    workspace: tracker.workspace,
+                    recipients: [deptHead],
+                    type: "sla_escalation",
+                    refModel: "SLATracker",
+                    refId: tracker._id,
+                    title: `SLA Escalation Level 2: ${tracker.task.taskNumber}`,
+                    message: `${tracker.task.title} is delayed by ${maxDelayDays} day(s). Escalated to Department Head.`,
+                    actionUrl: `/tasks/${tracker.task._id}`,
+                    priority: "urgent",
+                    channels: { inApp: true, email: true, slack: true },
+                    metadata: {
+                      taskNumber: tracker.task.taskNumber,
+                      delayDays: maxDelayDays,
+                      escalationLevel: 2
+                    }
+                  });
+                }
 
                 successCount++;
               }
