@@ -1,0 +1,45 @@
+const express = require('express');
+const router = express.Router({ mergeParams: true });
+const { protect, verifyWorkspaceAccess } = require('../middleware/auth.middleware');
+const ctrl = require('../controllers/employee.controller');
+
+router.use(protect, verifyWorkspaceAccess);
+
+router.get('/skills', ctrl.skills);
+router.get('/me', ctrl.getMe);
+router.put('/me', ctrl.updateMe);
+router.patch('/me/availability', ctrl.updateAvailability);
+router.get('/org-chart', ctrl.orgChart);
+router.get('/reports', ctrl.reports);
+router.post('/reports/export/excel', ctrl.reports);
+router.post('/reports/export/pdf', ctrl.reports);
+router.get('/', ctrl.list);
+router.post('/', ctrl.create);
+router.get('/:employeeId', ctrl.getById);
+router.put('/:employeeId', ctrl.update);
+router.delete('/:employeeId', ctrl.remove);
+router.patch('/:employeeId/deactivate', ctrl.deactivate);
+router.patch('/:employeeId/reactivate', ctrl.reactivate);
+router.patch('/:employeeId/status', ctrl.status);
+router.patch('/:employeeId/role', ctrl.role);
+router.patch('/:employeeId/department', ctrl.department);
+router.patch('/:employeeId/manager', ctrl.manager);
+router.post('/:employeeId/profile-image', ctrl.profileImage);
+router.delete('/:employeeId/profile-image', ctrl.removeProfileImage);
+router.get('/:employeeId/tasks', ctrl.tasks);
+router.get('/:employeeId/projects', ctrl.projects);
+router.get('/:employeeId/timesheets', ctrl.timesheets);
+router.get('/:employeeId/meetings', ctrl.meetings);
+router.get('/:employeeId/mom-points', ctrl.momPoints);
+router.get('/:employeeId/workload', ctrl.workload);
+router.get('/:employeeId/activity', ctrl.activity);
+router.post('/:employeeId/skills', ctrl.addSkill);
+router.put('/:employeeId/skills/:skillId', ctrl.updateSkill);
+router.delete('/:employeeId/skills/:skillId', ctrl.removeSkill);
+router.get('/:employeeId/documents', ctrl.documents);
+router.post('/:employeeId/documents', ctrl.addDocument);
+router.get('/:employeeId/documents/:documentId', ctrl.documents);
+router.delete('/:employeeId/documents/:documentId', ctrl.deleteDocument);
+router.patch('/:employeeId/documents/:documentId/verify', ctrl.verifyDocument);
+
+module.exports = router;

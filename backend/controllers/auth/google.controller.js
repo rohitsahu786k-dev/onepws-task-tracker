@@ -1,16 +1,20 @@
-﻿const { generateAccessToken, generateRefreshToken } = require("../../utils/generateToken");
-const asyncHandler = require("../../utils/asyncHandler");
+const asyncHandler = require('../../utils/asyncHandler');
+const tokenService = require('../../services/token.service');
+const sessionService = require('../../services/session.service');
 
 const googleCallback = asyncHandler(async (req, res) => {
   const user = req.user;
-  const accessToken = generateAccessToken(user._id);
-  const refreshToken = generateRefreshToken(user._id);
-  user.refreshToken = refreshToken;
+  if (!user || !user.isActive || user.status === 'suspended') {
+    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=account_blocked`);
+  }
+
+  const tokens = await tokenService.createLoginSession({ user, req, rememberMe: true });
+  user.lastLoginAt = new Date();
+  user.lastLoginIp = req.ip;
   await user.save({ validateBeforeSave: false });
 
-  res.redirect(
-    `${process.env.CLIENT_URL}/auth/google/success?accessToken=${accessToken}&refreshToken=${refreshToken}`
-  );
+  res.cookie('refreshToken', tokens.refreshToken, sessionService.refreshCookieOptions(true));
+  res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/google/callback?accessToken=${tokens.accessToken}`);
 });
 
 module.exports = { googleCallback };

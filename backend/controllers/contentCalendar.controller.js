@@ -1,77 +1,40 @@
 const asyncHandler = require('../utils/asyncHandler');
-const ContentCalendarPost = require('../models/ContentCalendarPost');
+const ContentItem = require('../models/ContentItem');
 
-const getWorkspaceId = (req) => req.params.wid || req.params.workspaceId || req.query.workspace || req.body.workspace;
+const workspaceId = (req) => req.workspace._id;
 
-const buildQuery = (req) => {
-  const query = {};
-  const workspace = getWorkspaceId(req);
-  if (workspace) query.workspace = workspace;
-  if (req.query.search) {
-    const search = new RegExp(req.query.search, 'i');
-    query.$or = ['name', 'title', 'email', 'status'].map((field) => ({ [field]: search }));
+function calendarQuery(req) {
+  const query = { workspace: workspaceId(req), isDeleted: { $ne: true } };
+  if (req.query.startDate || req.query.endDate) {
+    query.scheduledDate = {};
+    if (req.query.startDate) query.scheduledDate.$gte = new Date(req.query.startDate);
+    if (req.query.endDate) query.scheduledDate.$lte = new Date(req.query.endDate);
   }
+  if (req.query.campaign) query.campaign = req.query.campaign;
+  if (req.query.platform) query.platforms = req.query.platform;
+  if (req.query.contentType) query.contentType = req.query.contentType;
   if (req.query.status) query.status = req.query.status;
-  if (req.query.isActive !== undefined) query.isActive = req.query.isActive === 'true';
+  if (req.query.owner) query.contentOwner = req.query.owner;
+  if (req.query.assignedTo) query.assignedTo = req.query.assignedTo;
+  if (req.query.approvalStatus) query['approval.status'] = req.query.approvalStatus;
   return query;
-};
+}
 
 const getAll = asyncHandler(async (req, res) => {
-  const page = Math.max(Number(req.query.page) || 1, 1);
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
-  const skip = (page - 1) * limit;
-  const query = buildQuery(req);
-  const [items, total] = await Promise.all([
-    ContentCalendarPost.find(query).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
-    ContentCalendarPost.countDocuments(query),
-  ]);
-
-  res.json({
-    success: true,
-    data: items,
-    contentCalendarPosts: items,
-    pagination: { page, limit, total, pages: Math.ceil(total / limit) || 1 },
-  });
+  const items = await ContentItem.find(calendarQuery(req)).populate('campaign assignedTo publisher').sort({ scheduledDate: 1 });
+  res.json({ success: true, data: items, contentItems: items });
 });
 
-const create = asyncHandler(async (req, res) => {
-  const payload = { ...req.body };
-  const workspace = getWorkspaceId(req);
-  if (workspace && !payload.workspace) payload.workspace = workspace;
-  if (req.user?._id && !payload.createdBy) payload.createdBy = req.user._id;
-  const item = await ContentCalendarPost.create(payload);
-  res.status(201).json({ success: true, data: item, contentCalendarPost: item });
+const month = getAll;
+const week = getAll;
+const list = getAll;
+const platform = asyncHandler(async (req, res) => {
+  req.query.platform = req.params.platform;
+  return getAll(req, res);
+});
+const campaign = asyncHandler(async (req, res) => {
+  req.query.campaign = req.params.campaignId;
+  return getAll(req, res);
 });
 
-const getById = asyncHandler(async (req, res) => {
-  const item = await ContentCalendarPost.findById(req.params.id);
-  if (!item) return res.status(404).json({ success: false, message: 'ContentCalendarPost not found' });
-  res.json({ success: true, data: item, contentCalendarPost: item });
-});
-
-const update = asyncHandler(async (req, res) => {
-  const item = await ContentCalendarPost.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-  if (!item) return res.status(404).json({ success: false, message: 'ContentCalendarPost not found' });
-  res.json({ success: true, data: item, contentCalendarPost: item });
-});
-
-const remove = asyncHandler(async (req, res) => {
-  const item = await ContentCalendarPost.findById(req.params.id);
-  if (!item) return res.status(404).json({ success: false, message: 'ContentCalendarPost not found' });
-  await item.deleteOne();
-  res.json({ success: true, message: 'ContentCalendarPost deleted' });
-});
-
-module.exports = {
-  getAll,
-  list: getAll,
-  create,
-  getById,
-  getOne: getById,
-  update,
-  remove,
-  delete: remove,
-};
+module.exports = { getAll, month, week, list, platform, campaign };

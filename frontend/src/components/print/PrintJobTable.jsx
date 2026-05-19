@@ -1,0 +1,5 @@
+import PrintJobStatusBadge from './PrintJobStatusBadge';
+
+export default function PrintJobTable({ jobs = [], onOpen }) {
+  return <div className="overflow-hidden rounded-md border bg-white"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Print Job</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Qty</th><th className="px-4 py-3">Due</th><th className="px-4 py-3">Status</th></tr></thead><tbody>{jobs.map((job) => <tr key={job._id} onClick={() => onOpen?.(job)} className="cursor-pointer border-t hover:bg-slate-50"><td className="px-4 py-3"><div className="font-medium">{job.title}</div><div className="text-xs text-slate-500">{job.printJobNumber}</div></td><td className="px-4 py-3">{job.printJobType}</td><td className="px-4 py-3">{job.quantity}</td><td className="px-4 py-3">{job.requiredDate?.slice?.(0, 10)}</td><td className="px-4 py-3"><PrintJobStatusBadge status={job.status} /></td></tr>)}</tbody></table></div>;
+}

@@ -1,15 +1,23 @@
-import React from 'react';
+import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import useAuthStore from '../../store/authStore';
+import * as authService from '../../services/auth.service';
 
-const GoogleCallback = () => (
-  <main className="space-y-4 p-6">
-    <header>
-      <h1 className="text-2xl font-semibold text-slate-900">Google Callback</h1>
-      <p className="mt-1 text-sm text-slate-600">Manage google callback records and workflow details.</p>
-    </header>
-    <section className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="text-sm text-slate-500">This screen is ready for API data and workspace-specific configuration.</p>
-    </section>
-  </main>
-);
+const GoogleCallback = () => {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const { setAuth } = useAuthStore();
+
+  useEffect(() => {
+    const accessToken = params.get('accessToken');
+    if (accessToken) localStorage.setItem('access_token', accessToken);
+    authService.getProfile()
+      .then((res) => setAuth(res.data?.user || res.user, { accessToken }))
+      .then(() => navigate('/dashboard', { replace: true }))
+      .catch(() => navigate('/login?error=google_auth_failed', { replace: true }));
+  }, [navigate, params, setAuth]);
+
+  return <div className="min-h-48 flex items-center justify-center text-sm text-slate-600">Signing you in...</div>;
+};
 
 export default GoogleCallback;

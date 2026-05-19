@@ -1,13 +1,13 @@
 import api from './axiosInstance';
 
-const endpoint = '/department';
+const endpoint = '/workspaces';
 
 export const departmentApi = {
-  list: (params) => api.get(endpoint, { params }).then((res) => res.data),
-  get: (id, params) => api.get(`${endpoint}/${id}`, { params }).then((res) => res.data),
-  create: (payload) => api.post(endpoint, payload).then((res) => res.data),
-  update: (id, payload) => api.put(`${endpoint}/${id}`, payload).then((res) => res.data),
-  remove: (id) => api.delete(`${endpoint}/${id}`).then((res) => res.data),
+  list: (workspaceId, params) => api.get(`${endpoint}/${workspaceId}/departments`, { params }).then((res) => res.data),
+  get: (workspaceId, id, params) => api.get(`${endpoint}/${workspaceId}/departments/${id}`, { params }).then((res) => res.data),
+  create: (workspaceId, payload) => api.post(`${endpoint}/${workspaceId}/departments`, payload).then((res) => res.data),
+  update: (workspaceId, id, payload) => api.put(`${endpoint}/${workspaceId}/departments/${id}`, payload).then((res) => res.data),
+  remove: (workspaceId, id) => api.delete(`${endpoint}/${workspaceId}/departments/${id}`).then((res) => res.data),
 };
 
 export const getAll = departmentApi.list;

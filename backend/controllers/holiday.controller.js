@@ -52,10 +52,24 @@ const deleteHoliday = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Holiday deleted' });
 });
 
+const activateHoliday = asyncHandler(async (req, res) => {
+  const holiday = await Holiday.findOneAndUpdate({ _id: req.params.holidayId || req.params.id, workspace: req.params.wid }, { isActive: true, updatedBy: req.user?._id }, { new: true });
+  if (!holiday) return res.status(404).json({ success: false, message: 'Holiday not found' });
+  res.json({ success: true, holiday, data: holiday });
+});
+
+const deactivateHoliday = asyncHandler(async (req, res) => {
+  const holiday = await Holiday.findOneAndUpdate({ _id: req.params.holidayId || req.params.id, workspace: req.params.wid }, { isActive: false, updatedBy: req.user?._id }, { new: true });
+  if (!holiday) return res.status(404).json({ success: false, message: 'Holiday not found' });
+  res.json({ success: true, holiday, data: holiday });
+});
+
 module.exports = {
   getHolidays,
   createHoliday,
   getHolidayById,
   updateHoliday,
   deleteHoliday,
+  activateHoliday,
+  deactivateHoliday,
 };

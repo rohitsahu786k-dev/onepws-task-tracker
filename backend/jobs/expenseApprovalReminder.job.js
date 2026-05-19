@@ -13,24 +13,22 @@ module.exports = function expenseApprovalReminderJob() {
         const expenseOlderThan = dayjs().subtract(configuredDays, "day").toDate();
 
         const expenses = await Expense.find({
-          status: { $in: ["submitted", "pending"] },
-          submittedAt: { $lte: expenseOlderThan },
+          status: "pending_approval",
+          "approval.submittedAt": { $lte: expenseOlderThan },
           isDeleted: { $ne: true }
-        }).populate("submittedBy", "email firstName lastName").populate("approver", "email firstName lastName");
+        }).populate("createdBy", "email firstName lastName name").populate("approval.approvers.user", "email firstName lastName name");
 
         let successCount = 0;
         let failedCount = 0;
 
         for (const expense of expenses) {
           try {
-            const pendingDays = dayjs().diff(dayjs(expense.submittedAt), "day");
+            const pendingDays = dayjs().diff(dayjs(expense.approval?.submittedAt), "day");
 
             // Get approver
-            const approverIds = expense.approver
-              ? Array.isArray(expense.approver)
-                ? expense.approver.map(a => a._id)
-                : [expense.approver._id]
-              : [];
+            const approverIds = (expense.approval?.approvers || [])
+              .filter((approver) => approver.status === "pending" && approver.user)
+              .map((approver) => approver.user._id || approver.user);
 
             if (approverIds.length === 0) continue;
 
@@ -40,17 +38,17 @@ module.exports = function expenseApprovalReminderJob() {
               type: "expense_approval_reminder",
               refModel: "Expense",
               refId: expense._id,
-              title: `Expense Approval Reminder: ${expense.category}`,
-              message: `Expense of ${expense.amount} from ${expense.submittedBy.firstName} is pending approval for ${pendingDays} day(s).`,
+              title: `Expense Approval Reminder: ${expense.expenseNumber}`,
+              message: `${expense.title} is pending approval for ${pendingDays} day(s).`,
               actionUrl: `/expenses/${expense._id}`,
               priority: "medium",
               channels: { inApp: true, email: true },
               metadata: {
                 expenseAmount: expense.amount,
-                category: expense.category,
-                submittedBy: expense.submittedBy.firstName,
+                category: expense.expenseCategory,
+                submittedBy: expense.createdBy?.firstName || expense.createdBy?.name,
                 pendingDays,
-                submittedAt: expense.submittedAt
+                submittedAt: expense.approval?.submittedAt
               }
             });
 

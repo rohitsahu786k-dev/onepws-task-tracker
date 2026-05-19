@@ -6,7 +6,7 @@ const schema = new mongoose.Schema({
   description: String,
   eventType: {
     type: String,
-    enum: ["task", "tracker_task", "meeting", "mom", "sla", "budget", "expense", "holiday", "reminder", "custom"],
+    enum: ["task", "tracker_task", "meeting", "mom", "sla", "budget", "expense", "content", "campaign", "print_job", "holiday", "reminder", "custom"],
     required: true
   },
   startDate: Date,
@@ -19,7 +19,7 @@ const schema = new mongoose.Schema({
     default: "scheduled"
   },
   priority: { type: String, enum: ["low", "medium", "high", "urgent"], default: "medium" },
-  refModel: { type: String, enum: ["Task", "TrackerRow", "Meeting", "MOM", "SLATracker", "Budget", "Expense", "Holiday", null] },
+  refModel: { type: String, enum: ["Task", "TrackerRow", "Meeting", "MOM", "SLATracker", "Budget", "Expense", "ContentItem", "Campaign", "PrintJob", "Holiday", null] },
   refId: mongoose.Schema.Types.ObjectId,
   assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
@@ -58,6 +58,9 @@ const schema = new mongoose.Schema({
     phaseKey: String,
     phaseName: String,
     taskNumber: String,
+    momNumber: String,
+    pointId: String,
+    pointNumber: String,
     meetingLink: String,
     locationType: String,
     cancelledReason: String,

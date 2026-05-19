@@ -1,11 +1,13 @@
 const { sendMeetingReminders } = require('../services/meetingReminder.service');
 const { runJobWithLog } = require('./cronUtils');
+const { checkWikiReviewDue } = require('./wikiReviewDue.job');
 
 const jobHandlers = {
   meeting_reminder_job: () => runJobWithLog('meeting_reminder_job', async () => {
     await sendMeetingReminders();
     return { processedCount: 1, successCount: 1, failedCount: 0 };
-  })
+  }),
+  wiki_review_due_job: () => runJobWithLog('wiki_review_due_job', checkWikiReviewDue),
 };
 
 async function runJobByName(jobName) {

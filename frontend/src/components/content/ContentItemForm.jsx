@@ -1,0 +1,6 @@
+import PlatformSelector from './PlatformSelector';
+
+export default function ContentItemForm({ value = {}, onChange, onSubmit, isSaving }) {
+  const set = (key, next) => onChange?.({ ...value, [key]: next });
+  return <form onSubmit={(event) => { event.preventDefault(); onSubmit?.(); }} className="space-y-4"><input required className="w-full rounded-md border px-3 py-2" placeholder="Content title" value={value.title || ''} onChange={(e) => set('title', e.target.value)} /><PlatformSelector value={value.platforms || []} onChange={(next) => set('platforms', next)} /><div className="grid gap-3 sm:grid-cols-2"><input required type="date" className="rounded-md border px-3 py-2" value={value.scheduledDate || ''} onChange={(e) => set('scheduledDate', e.target.value)} /><input type="time" className="rounded-md border px-3 py-2" value={value.scheduledTime || ''} onChange={(e) => set('scheduledTime', e.target.value)} /></div><textarea className="w-full rounded-md border px-3 py-2" placeholder="Brief" value={value.brief || ''} onChange={(e) => set('brief', e.target.value)} /><button className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Content'}</button></form>;
+}

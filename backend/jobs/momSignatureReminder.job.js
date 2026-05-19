@@ -12,7 +12,7 @@ module.exports = function momSignatureReminderJob() {
         const moms = await MOM.find({
           status: { $in: ["sent_for_signature", "partially_signed"] },
           isDeleted: { $ne: true }
-        }).populate("attendees.attendee", "email firstName lastName");
+        }).populate("attendees.user", "email firstName lastName name");
 
         let successCount = 0;
         let failedCount = 0;
@@ -20,8 +20,8 @@ module.exports = function momSignatureReminderJob() {
         for (const mom of moms) {
           try {
             const pendingAttendees = (mom.attendees || [])
-              .filter(a => !a.signed)
-              .map(a => a.attendee._id);
+              .filter(a => a.signatureRequired !== false && !a.signed && a.user)
+              .map(a => a.user._id || a.user);
 
             if (pendingAttendees.length === 0) continue;
 

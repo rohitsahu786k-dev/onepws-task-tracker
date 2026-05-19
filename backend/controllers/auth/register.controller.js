@@ -1,31 +1,43 @@
-﻿const User = require("../../models/User");
-const { generateAccessToken, generateRefreshToken } = require("../../utils/generateToken");
-const asyncHandler = require("../../utils/asyncHandler");
+const User = require('../../models/User');
+const asyncHandler = require('../../utils/asyncHandler');
+const { validatePassword } = require('../../services/password.service');
+const emailVerificationService = require('../../services/emailVerification.service');
 
 const register = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, confirmPassword, phone, designation } = req.body;
+  const normalizedEmail = String(email || '').toLowerCase().trim();
 
-  const existing = await User.findOne({ email });
-  if (existing) {
-    return res.status(409).json({ success: false, message: "Email already registered." });
+  if (password !== (confirmPassword || password)) {
+    return res.status(400).json({ success: false, message: 'Passwords do not match' });
   }
 
-  const assignedRole =
-    req.user?.role === "super_admin" ? role || "member" : "member";
+  const passwordError = validatePassword(password, normalizedEmail);
+  if (passwordError) return res.status(400).json({ success: false, message: passwordError });
 
-  const user = await User.create({ name, email, password, role: assignedRole });
+  const existing = await User.findOne({ email: normalizedEmail });
+  if (existing) return res.status(409).json({ success: false, message: 'Email already registered' });
 
-  const accessToken = generateAccessToken(user._id);
-  const refreshToken = generateRefreshToken(user._id);
-  user.refreshToken = refreshToken;
-  await user.save({ validateBeforeSave: false });
+  const user = await User.create({
+    name,
+    email: normalizedEmail,
+    password,
+    phone,
+    designation,
+    authProvider: 'local',
+    status: process.env.ENABLE_EMAIL_VERIFICATION === 'false' ? 'active' : 'pending_verification',
+    isEmailVerified: process.env.ENABLE_EMAIL_VERIFICATION === 'false'
+  });
+
+  if (!user.isEmailVerified) {
+    await emailVerificationService.sendVerificationEmail(user);
+  }
 
   res.status(201).json({
     success: true,
-    message: "Account created successfully.",
-    accessToken,
-    refreshToken,
-    user,
+    message: user.isEmailVerified
+      ? 'Registration successful.'
+      : 'Registration successful. Please verify your email.',
+    data: { userId: user._id, email: user.email, isEmailVerified: user.isEmailVerified }
   });
 });
 

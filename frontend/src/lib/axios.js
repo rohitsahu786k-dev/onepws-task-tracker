@@ -8,7 +8,6 @@ const api = axios.create({
 });
 
 const getAccessToken = () => localStorage.getItem('access_token') || localStorage.getItem('accessToken');
-const getRefreshToken = () => localStorage.getItem('refresh_token') || localStorage.getItem('refreshToken');
 const storeTokens = ({ accessToken, refreshToken }) => {
   if (accessToken) {
     localStorage.setItem('access_token', accessToken);
@@ -76,16 +75,13 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
       
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        // Logout if no refresh token
-        clearTokens();
-        window.location.href = '/login';
-        return Promise.reject(error);
-      }
-
       try {
-        const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+        const legacyRefreshToken = localStorage.getItem('refresh_token') || localStorage.getItem('refreshToken');
+        const { data } = await axios.post(
+          `${API_URL}/auth/refresh-token`,
+          legacyRefreshToken ? { refreshToken: legacyRefreshToken } : {},
+          { withCredentials: true }
+        );
         
         const newAccessToken = data.accessToken || data.data?.accessToken;
         const newRefreshToken = data.refreshToken || data.data?.refreshToken;

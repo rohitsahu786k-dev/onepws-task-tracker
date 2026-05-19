@@ -5,6 +5,14 @@ const NotificationTemplate = require('../models/NotificationTemplate');
 const NotificationLog = require('../models/NotificationLog');
 const decrypt = require('../utils/decryptField');
 
+function stripUnsafeText(text = '') {
+  return String(text)
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/\son\w+="[^"]*"/gi, '')
+    .replace(/\son\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '');
+}
+
 async function renderSlackText({ workspace, event, notification, data = {} }) {
   const template = await NotificationTemplate.findOne({
     workspace,
@@ -20,9 +28,11 @@ async function renderSlackText({ workspace, event, notification, data = {} }) {
     ...data
   };
 
-  return template
+  const rendered = template
     ? Handlebars.compile(template.bodyTemplate || '{{title}}\n{{message}}')(variables)
     : `*${notification.title}*\n${notification.message}`;
+
+  return stripUnsafeText(rendered);
 }
 
 async function sendNotification({ workspace, event, notification, data }) {

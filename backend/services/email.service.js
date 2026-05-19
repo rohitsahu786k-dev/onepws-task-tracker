@@ -34,10 +34,6 @@ async function getTransporter(workspace) {
 async function renderEmailTemplate({ workspace, event, user, notification, data = {} }) {
   const template = await EmailTemplate.findOne({ workspace, event, isActive: true });
 
-  if (!template) {
-    throw new Error(`Email template not found for event: ${event}`);
-  }
-
   const variables = {
     userName: user.name,
     userEmail: user.email,
@@ -48,6 +44,14 @@ async function renderEmailTemplate({ workspace, event, user, notification, data 
     actionUrl: `${process.env.CLIENT_URL || ''}${notification.actionUrl || ''}`,
     ...data
   };
+
+  if (!template) {
+    return {
+      subject: notification.title,
+      html: stripUnsafeHtml(`<p>${Handlebars.escapeExpression(notification.message)}</p>${notification.actionUrl ? `<p><a href="${variables.actionUrl}">Open in ONEPWS</a></p>` : ''}`),
+      text: notification.message
+    };
+  }
 
   return {
     subject: Handlebars.compile(template.subject || notification.title)(variables),

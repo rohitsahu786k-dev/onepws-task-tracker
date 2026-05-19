@@ -10,5 +10,7 @@ router.post('/', ctrl.createHoliday);
 router.get('/:id', ctrl.getHolidayById);
 router.put('/:id', ctrl.updateHoliday);
 router.delete('/:id', ctrl.deleteHoliday);
+router.patch('/:id/activate', ctrl.activateHoliday);
+router.patch('/:id/deactivate', ctrl.deactivateHoliday);
 
 module.exports = router;

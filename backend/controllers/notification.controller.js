@@ -77,7 +77,7 @@ const deleteNotification = asyncHandler(async (req, res) => {
 // @desc    Get preferences
 // @route   GET /api/workspaces/:wid/notification-preferences
 const getPreferences = asyncHandler(async (req, res) => {
-  const prefs = await NotificationPreference.findOne({ workspace: req.params.wid, user: req.user._id });
+  const prefs = await NotificationPreference.findOne({ workspace: req.workspace._id, user: req.user._id });
   res.json({ success: true, data: prefs || {} });
 });
 
@@ -85,8 +85,8 @@ const getPreferences = asyncHandler(async (req, res) => {
 // @route   PUT /api/workspaces/:wid/notification-preferences
 const updatePreferences = asyncHandler(async (req, res) => {
   const prefs = await NotificationPreference.findOneAndUpdate(
-    { workspace: req.params.wid, user: req.user._id },
-    { $set: req.body },
+    { workspace: req.workspace._id, user: req.user._id },
+    { $set: { ...req.body, workspace: req.workspace._id, user: req.user._id } },
     { new: true, upsert: true }
   );
   res.json({ success: true, data: prefs });

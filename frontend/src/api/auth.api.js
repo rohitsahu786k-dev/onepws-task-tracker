@@ -3,11 +3,13 @@ import api from './axiosInstance';
 const endpoint = '/auth';
 
 export const authApi = {
-  list: (params) => api.get(endpoint, { params }).then((res) => res.data),
-  get: (id, params) => api.get(`${endpoint}/${id}`, { params }).then((res) => res.data),
-  create: (payload) => api.post(endpoint, payload).then((res) => res.data),
-  update: (id, payload) => api.put(`${endpoint}/${id}`, payload).then((res) => res.data),
-  remove: (id) => api.delete(`${endpoint}/${id}`).then((res) => res.data),
+  login: (payload) => api.post(`${endpoint}/login`, payload).then((res) => res.data),
+  register: (payload) => api.post(`${endpoint}/register`, payload).then((res) => res.data),
+  me: () => api.get(`${endpoint}/me`).then((res) => res.data),
+  logout: () => api.post(`${endpoint}/logout`).then((res) => res.data),
+  forgotPassword: (payload) => api.post(`${endpoint}/forgot-password`, payload).then((res) => res.data),
+  resetPassword: (token, payload) => api.post(`${endpoint}/reset-password/${token}`, payload).then((res) => res.data),
+  verifyEmail: (token) => api.get(`${endpoint}/verify-email/${token}`).then((res) => res.data),
 };
 
 export const getAll = authApi.list;

@@ -5,7 +5,11 @@ const schema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   action: String, module: String, refModel: String, refId: mongoose.Schema.Types.ObjectId,
   description: String, oldValue: mongoose.Schema.Types.Mixed, newValue: mongoose.Schema.Types.Mixed,
-  ipAddress: String, userAgent: String
+  ipAddress: String, userAgent: String,
+  createdAt: { type: Date, default: Date.now }
 }, { timestamps: false });
+
+schema.index({ workspace: 1, module: 1 });
+schema.index({ workspace: 1, createdAt: -1 });
 
 module.exports = mongoose.models.ActivityLog || mongoose.model('ActivityLog', schema);

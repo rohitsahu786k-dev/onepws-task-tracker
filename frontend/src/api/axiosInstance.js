@@ -60,16 +60,9 @@ axiosInstance.interceptors.response.use(
       original._retry = true;
       isRefreshing = true;
 
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        isRefreshing = false;
-        clearTokens();
-        window.location.href = '/login';
-        return Promise.reject(error);
-      }
-
       try {
-        const { data } = await axios.post('/api/auth/refresh', { refreshToken });
+        const refreshToken = getRefreshToken();
+        const { data } = await axios.post('/api/auth/refresh-token', refreshToken ? { refreshToken } : {}, { withCredentials: true });
         const accessToken = data.accessToken || data.data?.accessToken;
         const nextRefreshToken = data.refreshToken || data.data?.refreshToken;
 

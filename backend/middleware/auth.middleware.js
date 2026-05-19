@@ -9,7 +9,7 @@ const permissionDenied = (res, message, errorCode = 'PERMISSION_DENIED') =>
 const protect = (req, res, next) => {
   passport.authenticate('jwt', { session: false }, (err, user, info) => {
     if (err) return next(err);
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || user.status === 'suspended' || user.status === 'inactive') {
       return res.status(401).json({
         success: false,
         statusCode: 401,
@@ -18,6 +18,14 @@ const protect = (req, res, next) => {
       });
     }
     req.user = user;
+    next();
+  })(req, res, next);
+};
+
+const optionalProtect = (req, res, next) => {
+  passport.authenticate('jwt', { session: false }, (err, user) => {
+    if (err) return next(err);
+    if (user && user.isActive && user.status !== 'suspended' && user.status !== 'inactive') req.user = user;
     next();
   })(req, res, next);
 };
@@ -132,6 +140,7 @@ function checkPermission(moduleKey, action) {
 
 module.exports = {
   protect,
+  optionalProtect,
   verifyToken: protect,
   verifyWorkspaceAccess,
   checkRole,

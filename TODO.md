@@ -1,0 +1,32 @@
+# Notification System — Completion Steps (Repo-Aligned)
+
+- [ ] (A) Verify backend email/slack/telegram rendering + templates
+  - [ ] Inspect `backend/services/email.service.js`
+  - [ ] Inspect `backend/services/slack.service.js`
+  - [ ] Inspect `backend/services/telegram.service.js`
+  - [ ] Confirm template lookup keys, variable mapping, and sanitization/fallback behavior
+  - [ ] Patch any mismatches (NotificationLog status, retry fields, missing template fallbacks)
+- [ ] (B) Verify SLA breach/escalation jobs wiring
+  - [ ] Inspect `backend/jobs/slaBreach.job.js`
+  - [ ] Inspect `backend/jobs/slaEscalation.job.js`
+  - [ ] Ensure correct notification types: `sla_breach`, `sla_escalation`
+  - [ ] Ensure correct recipient tiers and priority (`urgent` as escalation)
+- [ ] (C) Enforce cron dedupe for repeated runs
+  - [ ] Update `backend/services/cron.service.js` to use `notifyOncePerDay()` or implement dedupe wrapper for:
+    - `deadline_approaching`
+    - `task_due_today`
+    - `task_overdue`
+    - `mom_pending_signature`
+- [ ] (D) Ensure source modules trigger missing notify events
+  - [ ] Search for `notification.service.js` call sites
+  - [ ] Add/patch missing `notificationService.notify()` in task/comment/mention/mom/meeting/budget/expense/tracker/intake/announcement/system flows
+- [ ] (E) Frontend wiring fixes & UI completion
+  - [ ] Verify `frontend/src/components/layout/NotificationBell.jsx`
+  - [ ] Verify `frontend/src/components/layout/NotificationDropdown.jsx`
+  - [ ] Verify `frontend/src/pages/notifications/Notifications.jsx`
+  - [ ] Verify store methods (read/archive/delete) map correctly to backend endpoints
+  - [ ] Verify preferences pages save structure compatible with `NotificationPreference.js`
+  - [ ] Verify socket real-time updates refresh unread badge + dropdown list
+- [ ] Run local checks
+  - [ ] Backend: start server + ensure socket connects and `notification:new` emits
+  - [ ] Frontend: open notifications page + verify interactions

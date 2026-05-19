@@ -40,7 +40,10 @@ async function resolveChannels({ workspace, user, type, requestedChannels }) {
     return { inApp: false, email: false, slack: false, telegram: false };
   }
 
-  const userPrefs = prefsDoc?.preferences?.[type] || {};
+  const userPrefs =
+    typeof prefsDoc?.preferences?.get === 'function'
+      ? prefsDoc.preferences.get(type) || {}
+      : prefsDoc?.preferences?.[type] || {};
 
   return {
     inApp: requestedChannels.inApp !== false && userPrefs.inApp !== false,
@@ -146,8 +149,9 @@ async function notifyOncePerDay(payload) {
   const dayjs = require('dayjs');
   const start = dayjs().startOf("day").toDate();
   const end = dayjs().endOf("day").toDate();
+  const createdNotifications = [];
 
-  for (const recipient of payload.recipients) {
+  for (const recipient of payload.recipients || []) {
     const exists = await Notification.findOne({
       workspace: payload.workspace,
       recipient,
@@ -159,11 +163,14 @@ async function notifyOncePerDay(payload) {
 
     if (exists) continue;
 
-    await notify({
+    const created = await notify({
       ...payload,
       recipients: [recipient]
     });
+    createdNotifications.push(...created);
   }
+
+  return createdNotifications;
 }
 
 async function retryDelivery(log) {

@@ -75,6 +75,7 @@ const navigationSections = [
       { path: '/settings', label: 'Settings', icon: Settings, module: 'settings', permission: 'settings:view' },
       { path: '/settings/roles', label: 'Roles & Access', icon: ShieldCheck, module: 'settings', permission: 'settings:update_roles' },
       { path: '/settings/automation', label: 'Automation Logs', icon: Sparkles, module: 'settings', permission: 'settings:view' },
+      { path: '/settings/developer', label: 'Developer Settings', icon: ShieldCheck, module: 'settings', permission: 'settings:view' },
       { path: '/help', label: 'Help Center', icon: HelpCircle, module: 'dashboard', permission: 'dashboard:view' },
     ],
   },

@@ -65,6 +65,31 @@ const remove = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'User deleted' });
 });
 
+const getMe = asyncHandler(async (req, res) => {
+  res.json({ success: true, data: req.user, user: req.user });
+});
+
+const updateMe = asyncHandler(async (req, res) => {
+  const allowed = ['name', 'phone', 'avatar', 'designation', 'employeeCode', 'jd', 'bio', 'preferences', 'notificationPreferences', 'themePreference'];
+  const update = {};
+  allowed.forEach((field) => {
+    if (req.body[field] !== undefined) update[field] = req.body[field];
+  });
+  const user = await User.findByIdAndUpdate(req.user._id, update, { new: true, runValidators: true });
+  res.json({ success: true, message: 'Profile updated', data: user, user });
+});
+
+const uploadAvatar = asyncHandler(async (req, res) => {
+  const avatar = req.file ? `/uploads/avatars/${req.file.filename}` : req.body.avatar;
+  const user = await User.findByIdAndUpdate(req.user._id, { avatar }, { new: true });
+  res.json({ success: true, message: 'Avatar updated', data: user, user });
+});
+
+const deleteAvatar = asyncHandler(async (req, res) => {
+  const user = await User.findByIdAndUpdate(req.user._id, { $unset: { avatar: 1 } }, { new: true });
+  res.json({ success: true, message: 'Avatar removed', data: user, user });
+});
+
 module.exports = {
   getAll,
   list: getAll,
@@ -74,4 +99,8 @@ module.exports = {
   update,
   remove,
   delete: remove,
+  getMe,
+  updateMe,
+  uploadAvatar,
+  deleteAvatar
 };

@@ -55,7 +55,11 @@ async function runSchedule(schedule) {
   return { files, summary: payload.summary };
 }
 
-cron.schedule('*/15 * * * *', async () => {
+let scheduledTask = null;
+
+function start() {
+  if (scheduledTask) return scheduledTask;
+  scheduledTask = cron.schedule('*/15 * * * *', async () => {
   const schedules = await ReportSchedule.find({ isActive: true, nextRunAt: { $lte: new Date() } });
   for (const schedule of schedules) {
     try {
@@ -64,10 +68,13 @@ cron.schedule('*/15 * * * *', async () => {
       console.error(`Scheduled report failed for ${schedule._id}`, error);
     }
   }
-});
+  });
+  console.log('Report Schedule Cron started');
+  return scheduledTask;
+}
 
 module.exports = {
-  start: () => console.log('Report Schedule Cron started'),
+  start,
   calculateNextRun,
   runSchedule
 };

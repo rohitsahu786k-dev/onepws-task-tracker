@@ -5,6 +5,14 @@ const NotificationTemplate = require('../models/NotificationTemplate');
 const NotificationLog = require('../models/NotificationLog');
 const decrypt = require('../utils/decryptField');
 
+function escapeTelegramText(text = '') {
+  return String(text)
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 async function renderTelegramText({ workspace, event, notification, data = {} }) {
   const template = await NotificationTemplate.findOne({
     workspace,
@@ -20,9 +28,11 @@ async function renderTelegramText({ workspace, event, notification, data = {} })
     ...data
   };
 
-  return template
+  const rendered = template
     ? Handlebars.compile(template.bodyTemplate || '{{title}}\n{{message}}')(variables)
     : `${notification.title}\n${notification.message}`;
+
+  return escapeTelegramText(rendered);
 }
 
 async function sendNotification({ workspace, event, notification, data }) {

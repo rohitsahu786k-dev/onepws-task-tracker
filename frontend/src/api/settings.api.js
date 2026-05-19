@@ -1,13 +1,15 @@
 import api from './axiosInstance';
 
-const endpoint = '/settings';
+const base = (workspaceId) => `/workspaces/${workspaceId}/settings`;
 
 export const settingsApi = {
-  list: (params) => api.get(endpoint, { params }).then((res) => res.data),
-  get: (id, params) => api.get(`${endpoint}/${id}`, { params }).then((res) => res.data),
-  create: (payload) => api.post(endpoint, payload).then((res) => res.data),
-  update: (id, payload) => api.put(`${endpoint}/${id}`, payload).then((res) => res.data),
-  remove: (id) => api.delete(`${endpoint}/${id}`).then((res) => res.data),
+  list: (workspaceId, params) => api.get(base(workspaceId), { params }).then((res) => res.data),
+  get: (workspaceId, category, params) => api.get(`${base(workspaceId)}/${category}`, { params }).then((res) => res.data),
+  update: (workspaceId, category, payload) => api.put(`${base(workspaceId)}/${category}`, payload).then((res) => res.data),
+  activity: (workspaceId, params) => api.get(`${base(workspaceId)}/activity`, { params }).then((res) => res.data),
+  testEmail: (workspaceId, payload) => api.post(`${base(workspaceId)}/email/test`, payload).then((res) => res.data),
+  testSlack: (workspaceId, payload) => api.post(`${base(workspaceId)}/slack/test`, payload).then((res) => res.data),
+  testTelegram: (workspaceId, payload) => api.post(`${base(workspaceId)}/telegram/test`, payload).then((res) => res.data),
 };
 
 export const getAll = settingsApi.list;

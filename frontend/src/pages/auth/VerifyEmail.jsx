@@ -1,15 +1,24 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import * as authService from '../../services/auth.service';
 
-const VerifyEmail = () => (
-  <main className="space-y-4 p-6">
-    <header>
-      <h1 className="text-2xl font-semibold text-slate-900">Verify Email</h1>
-      <p className="mt-1 text-sm text-slate-600">Manage verify email records and workflow details.</p>
-    </header>
-    <section className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="text-sm text-slate-500">This screen is ready for API data and workspace-specific configuration.</p>
+const VerifyEmail = () => {
+  const { token } = useParams();
+  const [state, setState] = useState({ loading: true, message: 'Verifying...' });
+
+  useEffect(() => {
+    authService.verifyEmail(token)
+      .then((res) => setState({ loading: false, message: res.message || 'Email verified successfully' }))
+      .catch((error) => setState({ loading: false, message: error.response?.data?.message || 'Invalid or expired verification link' }));
+  }, [token]);
+
+  return (
+    <section className="space-y-5 bg-white dark:bg-slate-950 p-8 rounded-xl shadow-sm border dark:border-slate-800 text-center">
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Verify email</h2>
+      <p className="text-sm text-slate-600 dark:text-slate-300">{state.message}</p>
+      {!state.loading && <Link to="/login" className="text-primary text-sm">Continue to login</Link>}
     </section>
-  </main>
-);
+  );
+};
 
 export default VerifyEmail;

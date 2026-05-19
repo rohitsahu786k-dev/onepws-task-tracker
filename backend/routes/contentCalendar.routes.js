@@ -1,12 +1,15 @@
 const express = require('express');
-const router = express.Router();
-const { protect } = require('../middleware/auth.middleware');
+const router = express.Router({ mergeParams: true });
+const { protect, verifyWorkspaceAccess, checkModuleEnabled } = require('../middleware/auth.middleware');
 const ctrl = require('../controllers/contentCalendar.controller');
 
-router.get('/', protect, ctrl.getAll);
-router.post('/', protect, ctrl.create);
-router.get('/:id', protect, ctrl.getById);
-router.put('/:id', protect, ctrl.update);
-router.delete('/:id', protect, ctrl.remove);
+router.use(protect, verifyWorkspaceAccess, checkModuleEnabled('content_calendar'));
+
+router.get('/', ctrl.getAll);
+router.get('/month', ctrl.month);
+router.get('/week', ctrl.week);
+router.get('/list', ctrl.list);
+router.get('/platform/:platform', ctrl.platform);
+router.get('/campaign/:campaignId', ctrl.campaign);
 
 module.exports = router;

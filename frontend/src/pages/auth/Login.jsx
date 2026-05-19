@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as z from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -42,9 +42,15 @@ const Login = () => {
   });
 
   const mutation = useMutation({
-    mutationFn: (data) => authService.login(data.email, data.password),
+    mutationFn: (data) => authService.login(data.email, data.password, data.rememberMe),
     onSuccess: async (data) => {
-      await setAuth(data.user, { accessToken: data.accessToken, refreshToken: data.refreshToken });
+      let authData = data;
+      if (data.requiresTwoFactor) {
+        const code = window.prompt('Enter your 2FA code');
+        if (!code) return;
+        authData = await authService.loginWithTwoFactor(data.tempToken, code);
+      }
+      await setAuth(authData.user || authData.data?.user, { accessToken: authData.accessToken || authData.data?.accessToken, refreshToken: authData.refreshToken || authData.data?.refreshToken });
       toast.success('Login successful');
       navigate('/dashboard');
     },
@@ -97,10 +103,10 @@ const Login = () => {
 
         <div className="flex items-center justify-between">
           <label className="flex items-center">
-            <input type="checkbox" className="rounded border-slate-300 text-primary focus:ring-primary" />
+            <input {...register('rememberMe')} type="checkbox" className="rounded border-slate-300 text-primary focus:ring-primary" />
             <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">Remember me</span>
           </label>
-          <a href="#" className="text-sm font-medium text-primary hover:underline">Forgot password?</a>
+          <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">Forgot password?</Link>
         </div>
 
         <button
@@ -136,6 +142,7 @@ const Login = () => {
             </a>
           </div>
         </div>
+        <Link to="/register" className="block text-center text-sm text-primary">Create an account</Link>
       </form>
     </div>
   );

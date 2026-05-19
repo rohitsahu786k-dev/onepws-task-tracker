@@ -1,24 +1,27 @@
-﻿const User = require("../../models/User");
-const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require("../../utils/generateToken");
-const asyncHandler = require("../../utils/asyncHandler");
+const Session = require('../../models/Session');
+const asyncHandler = require('../../utils/asyncHandler');
+const tokenService = require('../../services/token.service');
+const sessionService = require('../../services/session.service');
 
 const refreshToken = asyncHandler(async (req, res) => {
-  const { refreshToken: token } = req.body;
-  if (!token) return res.status(400).json({ success: false, message: "Refresh token required." });
+  const rawToken = sessionService.readRefreshToken(req);
+  if (!rawToken) return res.status(401).json({ success: false, message: 'Refresh token missing' });
 
-  const decoded = verifyRefreshToken(token);
-  const user = await User.findById(decoded.id).select("+refreshToken");
+  const session = await Session.findOne({
+    refreshTokenHash: tokenService.hashToken(rawToken),
+    isRevoked: false,
+    expiresAt: { $gt: new Date() }
+  }).populate('user');
 
-  if (!user || user.refreshToken !== token) {
-    return res.status(401).json({ success: false, message: "Invalid refresh token." });
+  if (!session || !session.user || !session.user.isActive || session.user.status === 'suspended') {
+    return res.status(401).json({ success: false, message: 'Invalid refresh token' });
   }
 
-  const newAccessToken = generateAccessToken(user._id);
-  const newRefreshToken = generateRefreshToken(user._id);
-  user.refreshToken = newRefreshToken;
-  await user.save({ validateBeforeSave: false });
+  session.lastActiveAt = new Date();
+  await session.save();
 
-  res.json({ success: true, accessToken: newAccessToken, refreshToken: newRefreshToken });
+  const accessToken = tokenService.generateAccessToken(session.user);
+  res.json({ success: true, data: { accessToken }, accessToken });
 });
 
 module.exports = { refreshToken };

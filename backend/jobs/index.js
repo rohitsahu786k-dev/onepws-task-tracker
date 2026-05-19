@@ -23,6 +23,9 @@ const mediaCleanupJob = require("./mediaCleanup.job");
 const backupJob = require("./backup.job");
 const notificationRetryJob = require("./notificationRetry.job");
 const expiredPublicLinkCleanupJob = require("./expiredPublicLinkCleanup.job");
+const wikiReviewDueJob = require("./wikiReviewDue.job");
+const webhookRetryJob = require("./webhookRetry.job");
+const apiKeyExpiryJob = require("./apiKeyExpiry.job");
 
 function registerCronJobs() {
   console.log("Registering Cron Jobs...");
@@ -75,6 +78,11 @@ function registerCronJobs() {
   backupJob();
   notificationRetryJob();
   expiredPublicLinkCleanupJob();
+  wikiReviewDueJob();
+  
+  // API Key & Webhook jobs
+  webhookRetryJob();
+  apiKeyExpiryJob();
   
   console.log("✓ All cron jobs registered successfully.");
 }

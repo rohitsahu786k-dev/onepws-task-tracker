@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Stop-Process -Id 14412 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(npm run *)",
+      "Bash(curl -s -X POST http://localhost:5000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"test\",\"password\":\"test\"}')"
+    ]
+  }
+}

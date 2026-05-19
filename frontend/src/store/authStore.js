@@ -33,17 +33,24 @@ const useAuthStore = create(
       isInitialized: false,
       
       setAuth: async (user, tokens) => {
-        if (tokens) {
-          localStorage.setItem('access_token', tokens.accessToken);
-          localStorage.setItem('refresh_token', tokens.refreshToken);
+        const resolvedUser = user?.data?.user || user?.user || user;
+        const resolvedTokens = tokens || {
+          accessToken: user?.accessToken || user?.data?.accessToken,
+          refreshToken: user?.refreshToken || user?.data?.refreshToken
+        };
+
+        if (resolvedTokens?.accessToken) {
+          localStorage.setItem('access_token', resolvedTokens.accessToken);
+          if (resolvedTokens.refreshToken) localStorage.setItem('refresh_token', resolvedTokens.refreshToken);
+          else localStorage.removeItem('refresh_token');
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
         }
 
-        const defaultWorkspace = getDefaultWorkspace(user);
+        const defaultWorkspace = getDefaultWorkspace(resolvedUser);
 
         set({
-          user,
+          user: resolvedUser,
           workspace: defaultWorkspace,
           isAuthenticated: true,
           isInitialized: true
@@ -56,7 +63,7 @@ const useAuthStore = create(
             const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
             const res = await fetch(`${baseUrl}/workspaces/${workspaceId}/me/permissions`, {
               headers: {
-                'Authorization': `Bearer ${tokens?.accessToken || localStorage.getItem('access_token')}`
+                Authorization: `Bearer ${resolvedTokens?.accessToken || localStorage.getItem('access_token')}`
               }
             });
             const data = await res.json();
@@ -112,7 +119,7 @@ const useAuthStore = create(
 
         try {
           const res = await authService.getProfile();
-          const user = res.user || res.data;
+          const user = res.data?.user || res.user || res.data;
           const defaultWorkspace = getDefaultWorkspace(user);
           set({
             user,

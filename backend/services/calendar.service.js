@@ -26,7 +26,7 @@ const mapToObject = (value) => {
 const taskStatusToCalendarStatus = (status, dueDate) => {
   if (status === 'closed') return 'completed';
   if (status === 'cancelled') return 'cancelled';
-  if (status === 'in_process' || status === 'review') return 'in_progress';
+  if (['in_process', 'in_progress', 'review', 'in_review', 'submitted'].includes(status)) return 'in_progress';
   if (dueDate && new Date(dueDate) < new Date() && !['closed', 'cancelled'].includes(status)) return 'overdue';
   return 'pending';
 };

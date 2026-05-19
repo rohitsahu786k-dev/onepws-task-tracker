@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const { protect } = require('../middleware/auth.middleware');
+const { protect, verifyWorkspaceAccess } = require('../middleware/auth.middleware');
 const ctrl = require('../controllers/notification.controller');
 
-router.use(protect);
+router.use(protect, verifyWorkspaceAccess);
 
 // Workspace specific routes for notification preferences
 // Mounted at /api/workspaces/:wid/notification-preferences

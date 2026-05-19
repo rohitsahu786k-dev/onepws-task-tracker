@@ -1,0 +1,5 @@
+import ContentStatusBadge from './ContentStatusBadge';
+
+export default function ContentItemTable({ items = [], onOpen }) {
+  return <div className="overflow-hidden rounded-md border bg-white"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Content</th><th className="px-4 py-3">Platforms</th><th className="px-4 py-3">Schedule</th><th className="px-4 py-3">Status</th></tr></thead><tbody>{items.map((item) => <tr key={item._id} onClick={() => onOpen?.(item)} className="cursor-pointer border-t hover:bg-slate-50"><td className="px-4 py-3"><div className="font-medium">{item.title}</div><div className="text-xs text-slate-500">{item.contentNumber}</div></td><td className="px-4 py-3">{item.platforms?.join(', ')}</td><td className="px-4 py-3">{item.scheduledDate?.slice?.(0, 10)} {item.scheduledTime}</td><td className="px-4 py-3"><ContentStatusBadge status={item.status} /></td></tr>)}</tbody></table></div>;
+}

@@ -10,6 +10,11 @@ import DashboardLayout from './layouts/DashboardLayout';
 
 // Pages
 import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+import VerifyEmail from './pages/auth/VerifyEmail';
+import GoogleCallback from './pages/auth/GoogleCallback';
 import Overview from './pages/dashboard/Overview';
 import DailyTracker from './pages/tracker/DailyTracker';
 import FieldBuilder from './pages/tracker/FieldBuilder';
@@ -46,7 +51,20 @@ import NoteEditor from './pages/notes/NoteEditor';
 import WikiHome from './pages/wiki/WikiHome';
 import WikiPage from './pages/wiki/WikiPage';
 import WikiEditor from './pages/wiki/WikiEditor';
+import WikiArticleList from './pages/wiki/WikiArticleList';
+import WikiCategories from './pages/wiki/WikiCategories';
+import WikiTemplates from './pages/wiki/WikiTemplates';
+import WikiApprovals from './pages/wiki/WikiApprovals';
+import WikiReports from './pages/wiki/WikiReports';
 import EmployeeDirectory from './pages/directory/EmployeeDirectory';
+import CreateEmployee from './pages/employees/CreateEmployee';
+import EditEmployee from './pages/employees/EditEmployee';
+import EmployeeProfile from './pages/employees/EmployeeProfile';
+import MyEmployeeProfile from './pages/employees/MyProfile';
+import EmployeeDepartments from './pages/employees/Departments';
+import EmployeeDesignations from './pages/employees/Designations';
+import OrgChart from './pages/employees/OrgChart';
+import EmployeeReports from './pages/employees/EmployeeReports';
 import DepartmentList from './pages/departments/DepartmentList';
 import DepartmentDetail from './pages/departments/DepartmentDetail';
 import WorkspaceList from './pages/workspaces/WorkspaceList';
@@ -78,6 +96,21 @@ import NotificationTemplates from './pages/settings/NotificationTemplates';
 import RolePermissions from './pages/settings/RolePermissions';
 import ModuleSettings from './pages/settings/ModuleSettings';
 import Forbidden from './pages/errors/Forbidden';
+import CampaignDashboard from './pages/campaigns/CampaignDashboard';
+import CampaignList from './pages/campaigns/CampaignList';
+import CreateCampaign from './pages/campaigns/CreateCampaign';
+import CampaignDetail from './pages/campaigns/CampaignDetail';
+import ContentCalendar from './pages/campaigns/ContentCalendar';
+import ContentItemDetail from './pages/campaigns/ContentItemDetail';
+import CampaignReports from './pages/campaigns/CampaignReports';
+import CampaignTemplates from './pages/campaigns/CampaignTemplates';
+import PrintDashboard from './pages/print/PrintDashboard';
+import PrintJobList from './pages/print/PrintJobList';
+import CreatePrintJob from './pages/print/CreatePrintJob';
+import PrintJobDetail from './pages/print/PrintJobDetail';
+import PrintReports from './pages/print/PrintReports';
+import PrintTemplates from './pages/print/PrintTemplates';
+import DeveloperSettings from './pages/developer/DeveloperSettings';
 import { usePermission } from './hooks/usePermission';
 
 const ProtectedRoute = ({ children, permission }) => {
@@ -131,6 +164,11 @@ function App() {
         {/* Auth Routes */}
         <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
+          <Route path="/auth/google/callback" element={<GoogleCallback />} />
         </Route>
 
         {/* Dashboard Routes */}
@@ -171,10 +209,24 @@ function App() {
           <Route path="/notes/new" element={<NoteEditor />} />
           <Route path="/notes/:id" element={<NoteEditor />} />
           <Route path="/wiki" element={<WikiHome />} />
+          <Route path="/wiki/articles" element={<WikiArticleList />} />
+          <Route path="/wiki/categories" element={<WikiCategories />} />
+          <Route path="/wiki/templates" element={<WikiTemplates />} />
+          <Route path="/wiki/approvals" element={<WikiApprovals />} />
+          <Route path="/wiki/reports" element={<WikiReports />} />
           <Route path="/wiki/new" element={<WikiEditor />} />
           <Route path="/wiki/:id" element={<WikiPage />} />
           <Route path="/wiki/:id/edit" element={<WikiEditor />} />
           <Route path="/directory" element={<EmployeeDirectory />} />
+          <Route path="/employees" element={<EmployeeDirectory />} />
+          <Route path="/employees/new" element={<CreateEmployee />} />
+          <Route path="/employees/me" element={<MyEmployeeProfile />} />
+          <Route path="/employees/departments" element={<EmployeeDepartments />} />
+          <Route path="/employees/designations" element={<EmployeeDesignations />} />
+          <Route path="/employees/org-chart" element={<OrgChart />} />
+          <Route path="/employees/reports" element={<EmployeeReports />} />
+          <Route path="/employees/:id" element={<EmployeeProfile />} />
+          <Route path="/employees/:id/edit" element={<EditEmployee />} />
           <Route path="/departments" element={<DepartmentList />} />
           <Route path="/departments/:id" element={<DepartmentDetail />} />
           <Route path="/workspaces" element={<WorkspaceList />} />
@@ -187,7 +239,7 @@ function App() {
           <Route path="/settings/email" element={<ProtectedRoute permission="settings:update_email"><EmailSettings /></ProtectedRoute>} />
           <Route path="/settings/storage" element={<ProtectedRoute permission="settings:update"><StorageSettings /></ProtectedRoute>} />
           <Route path="/settings/backups" element={<BackupSettings />} />
-          <Route path="/settings/api-keys" element={<ApiKeySettings />} />
+          <Route path="/settings/api-keys" element={<DeveloperSettings />} />
           <Route path="/help" element={<HelpCenter />} />
           <Route path="/help/:id" element={<HelpArticle />} />
           <Route path="/intake" element={<IntakeFormList />} />
@@ -204,6 +256,22 @@ function App() {
           <Route path="/settings/notification-templates" element={<ProtectedRoute permission="notifications:manage"><NotificationTemplates /></ProtectedRoute>} />
           <Route path="/settings/roles" element={<ProtectedRoute permission="settings:update_roles"><RolePermissions /></ProtectedRoute>} />
           <Route path="/settings/modules" element={<ProtectedRoute permission="settings:update_roles"><ModuleSettings /></ProtectedRoute>} />
+          <Route path="/campaigns" element={<ProtectedRoute permission="campaigns:view"><CampaignList /></ProtectedRoute>} />
+          <Route path="/campaigns/dashboard" element={<ProtectedRoute permission="campaigns:view"><CampaignDashboard /></ProtectedRoute>} />
+          <Route path="/campaigns/new" element={<ProtectedRoute permission="campaigns:create"><CreateCampaign /></ProtectedRoute>} />
+          <Route path="/campaigns/content-calendar" element={<ProtectedRoute permission="content_calendar:view"><ContentCalendar /></ProtectedRoute>} />
+          <Route path="/campaigns/reports" element={<ProtectedRoute permission="campaigns:view_reports"><CampaignReports /></ProtectedRoute>} />
+          <Route path="/campaigns/templates" element={<ProtectedRoute permission="campaigns:view"><CampaignTemplates /></ProtectedRoute>} />
+          <Route path="/campaigns/content/:id" element={<ProtectedRoute permission="content_calendar:view"><ContentItemDetail /></ProtectedRoute>} />
+          <Route path="/campaigns/:id" element={<ProtectedRoute permission="campaigns:view"><CampaignDetail /></ProtectedRoute>} />
+          <Route path="/print-jobs" element={<ProtectedRoute permission="print_jobs:view"><PrintJobList /></ProtectedRoute>} />
+          <Route path="/print-jobs/dashboard" element={<ProtectedRoute permission="print_jobs:view"><PrintDashboard /></ProtectedRoute>} />
+          <Route path="/print-jobs/new" element={<ProtectedRoute permission="print_jobs:create"><CreatePrintJob /></ProtectedRoute>} />
+          <Route path="/print-jobs/reports" element={<ProtectedRoute permission="print_jobs:view_reports"><PrintReports /></ProtectedRoute>} />
+          <Route path="/print-jobs/templates" element={<ProtectedRoute permission="print_jobs:view"><PrintTemplates /></ProtectedRoute>} />
+          <Route path="/print-jobs/:id" element={<ProtectedRoute permission="print_jobs:view"><PrintJobDetail /></ProtectedRoute>} />
+          {/* Developer Settings */}
+          <Route path="/settings/developer/*" element={<ProtectedRoute><DeveloperSettings /></ProtectedRoute>} />
           <Route path="/403" element={<Forbidden />} />
         </Route>
       </Routes>

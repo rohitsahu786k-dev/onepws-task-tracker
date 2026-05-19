@@ -5,6 +5,9 @@ const ctrl = require('../controllers/settings.controller');
 
 router.use(protect, verifyWorkspaceAccess, requireMinimumRole('admin'));
 
+router.get('/', ctrl.getAllSettings);
+router.get('/activity', ctrl.activity);
+
 router.post('/email/test', ctrl.testEmail);
 router.post('/slack/test', ctrl.testSlack);
 router.post('/telegram/test', ctrl.testTelegram);
@@ -17,5 +20,8 @@ router.get('/google-meet/auth-url', ctrl.getGoogleMeetAuthUrl);
 router.get('/google-meet/callback', ctrl.googleMeetCallback);
 router.post('/google-meet/test', ctrl.testGoogleMeet);
 router.post('/google-meet/disconnect', ctrl.disconnectGoogleMeet);
+
+router.get('/:category', ctrl.getCategory);
+router.put('/:category', ctrl.updateCategory);
 
 module.exports = router;

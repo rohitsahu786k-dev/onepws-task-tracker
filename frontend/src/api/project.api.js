@@ -1,13 +1,15 @@
 import api from './axiosInstance';
 
-const endpoint = '/project';
+const endpoint = '/workspaces';
 
 export const projectApi = {
-  list: (params) => api.get(endpoint, { params }).then((res) => res.data),
-  get: (id, params) => api.get(`${endpoint}/${id}`, { params }).then((res) => res.data),
-  create: (payload) => api.post(endpoint, payload).then((res) => res.data),
-  update: (id, payload) => api.put(`${endpoint}/${id}`, payload).then((res) => res.data),
-  remove: (id) => api.delete(`${endpoint}/${id}`).then((res) => res.data),
+  list: (workspaceId, params) => api.get(`${endpoint}/${workspaceId}/projects`, { params }).then((res) => res.data),
+  get: (workspaceId, id, params) => api.get(`${endpoint}/${workspaceId}/projects/${id}`, { params }).then((res) => res.data),
+  create: (workspaceId, payload) => api.post(`${endpoint}/${workspaceId}/projects`, payload).then((res) => res.data),
+  update: (workspaceId, id, payload) => api.put(`${endpoint}/${workspaceId}/projects/${id}`, payload).then((res) => res.data),
+  remove: (workspaceId, id) => api.delete(`${endpoint}/${workspaceId}/projects/${id}`).then((res) => res.data),
+  dashboard: (workspaceId, id) => api.get(`${endpoint}/${workspaceId}/projects/${id}/dashboard`).then((res) => res.data),
+  milestones: (workspaceId, id) => api.get(`${endpoint}/${workspaceId}/projects/${id}/milestones`).then((res) => res.data),
 };
 
 export const getAll = projectApi.list;

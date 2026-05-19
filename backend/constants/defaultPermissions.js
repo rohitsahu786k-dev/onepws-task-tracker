@@ -21,6 +21,7 @@ const MODULES = [
   'vendors',
   'campaigns',
   'content_calendar',
+  'print_jobs',
   'notifications',
   'email_templates',
   'settings',
@@ -45,16 +46,19 @@ const DEFAULT_ROLE_PERMISSIONS = {
     { module: 'tracker', actions: ['view', 'create_row', 'update_any_row', 'delete_row', 'configure_fields', 'bulk_import', 'bulk_export', 'lock_row', 'unlock_row'] },
     { module: 'calendar', actions: ['view', 'create', 'update', 'delete', 'manage_holidays'] },
     { module: 'media', actions: ['view', 'upload', 'download', 'delete', 'manage_folders'] },
-    { module: 'mom', actions: ['view', 'create', 'update', 'delete', 'sign', 'send_for_signature', 'generate_pdf'] },
+    { module: 'mom', actions: ['view', 'create', 'update', 'delete', 'sign', 'send_for_signature', 'generate_pdf', 'download_pdf', 'email', 'complete', 'cancel', 'archive', 'manage_points', 'create_task_from_point', 'view_reports', 'export'] },
     { module: 'meetings', actions: ['view', 'create', 'update', 'delete', 'cancel', 'complete', 'create_zoom', 'create_google_meet', 'create_mom'] },
     { module: 'sla', actions: ['view', 'configure', 'reset_t0', 'escalate'] },
     { module: 'intake', actions: ['view', 'review', 'approve', 'reject'] },
-    { module: 'budget', actions: ['view', 'create', 'update', 'delete', 'approve'] },
-    { module: 'expenses', actions: ['view', 'create', 'update', 'delete', 'approve'] },
+    { module: 'budget', actions: ['view', 'create', 'update', 'delete', 'submit_approval', 'approve', 'reject', 'revise', 'close', 'export'] },
+    { module: 'expenses', actions: ['view', 'create', 'update', 'delete', 'submit_approval', 'approve', 'reject', 'record_payment', 'upload_receipt', 'export'] },
     { module: 'reports', actions: ['view', 'view_own', 'view_department', 'export', 'schedule', 'email'] },
     { module: 'notes', actions: ['view', 'create', 'update', 'delete'] },
     { module: 'wiki', actions: ['view', 'create', 'update', 'delete'] },
     { module: 'vendors', actions: ['view', 'create', 'update', 'delete'] },
+    { module: 'campaigns', actions: ['view', 'create', 'update', 'delete', 'start', 'complete', 'cancel', 'submit_approval', 'approve', 'view_reports', 'export'] },
+    { module: 'content_calendar', actions: ['view', 'create', 'update', 'delete', 'assign', 'submit_approval', 'approve', 'schedule', 'publish', 'update_performance', 'upload_media'] },
+    { module: 'print_jobs', actions: ['view', 'create', 'update', 'delete', 'upload_artwork', 'submit_artwork_approval', 'approve_artwork', 'manage_quotations', 'select_quotation', 'submit_print_approval', 'approve_print', 'send_to_vendor', 'manage_proofs', 'approve_proof', 'update_production', 'create_dispatch', 'mark_delivered', 'quality_check', 'create_expense', 'create_reprint', 'complete', 'view_reports', 'export'] },
     { module: 'notifications', actions: ['view', 'manage'] },
     { module: 'email_templates', actions: ['view', 'create', 'update', 'delete'] },
     { module: 'settings', actions: ['view', 'update', 'update_email', 'update_notifications', 'update_roles', 'update_integrations'] },
@@ -71,16 +75,19 @@ const DEFAULT_ROLE_PERMISSIONS = {
     { module: 'tracker', actions: ['view', 'create_row', 'update_department_row', 'bulk_export'] },
     { module: 'calendar', actions: ['view', 'create', 'update'] },
     { module: 'media', actions: ['view', 'upload', 'download'] },
-    { module: 'mom', actions: ['view', 'create', 'update', 'sign', 'generate_pdf'] },
+    { module: 'mom', actions: ['view', 'create', 'update', 'sign', 'send_for_signature', 'generate_pdf', 'download_pdf', 'email', 'complete', 'cancel', 'archive', 'manage_points', 'create_task_from_point', 'view_reports', 'export'] },
     { module: 'meetings', actions: ['view', 'create', 'update', 'cancel', 'complete', 'create_zoom', 'create_google_meet', 'create_mom'] },
     { module: 'sla', actions: ['view'] },
     { module: 'intake', actions: ['view', 'review'] },
-    { module: 'budget', actions: ['view'] },
-    { module: 'expenses', actions: ['view', 'create'] },
+    { module: 'budget', actions: ['view', 'create', 'update', 'submit_approval', 'approve', 'reject', 'revise', 'export'] },
+    { module: 'expenses', actions: ['view', 'create', 'update', 'submit_approval', 'approve', 'reject', 'upload_receipt', 'export'] },
     { module: 'reports', actions: ['view', 'view_department', 'export', 'export_department', 'schedule', 'email'] },
     { module: 'notes', actions: ['view', 'create', 'update'] },
     { module: 'wiki', actions: ['view', 'create', 'update'] },
     { module: 'vendors', actions: ['view'] },
+    { module: 'campaigns', actions: ['view', 'create', 'update', 'start', 'complete', 'cancel', 'view_reports', 'export'] },
+    { module: 'content_calendar', actions: ['view', 'create', 'update', 'assign', 'submit_approval', 'schedule', 'publish', 'update_performance', 'upload_media'] },
+    { module: 'print_jobs', actions: ['view', 'create', 'update', 'upload_artwork', 'manage_quotations', 'select_quotation', 'send_to_vendor', 'manage_proofs', 'update_production', 'create_dispatch', 'mark_delivered', 'quality_check', 'complete', 'view_reports', 'export'] },
     { module: 'notifications', actions: ['view'] }
   ],
   member: [
@@ -94,10 +101,13 @@ const DEFAULT_ROLE_PERMISSIONS = {
     { module: 'meetings', actions: ['view', 'create', 'create_own', 'update'] },
     { module: 'sla', actions: ['view_own'] },
     { module: 'intake', actions: ['view_own', 'create'] },
-    { module: 'expenses', actions: ['view_own', 'create'] },
+    { module: 'expenses', actions: ['view', 'view_own', 'create', 'update'] },
     { module: 'reports', actions: ['view', 'view_own'] },
     { module: 'notes', actions: ['view', 'create', 'update_own', 'delete_own'] },
     { module: 'wiki', actions: ['view'] },
+    { module: 'campaigns', actions: ['view'] },
+    { module: 'content_calendar', actions: ['view', 'update'] },
+    { module: 'print_jobs', actions: ['view', 'create', 'upload_artwork'] },
     { module: 'notifications', actions: ['view'] }
   ],
   viewer: [
@@ -116,6 +126,9 @@ const DEFAULT_ROLE_PERMISSIONS = {
     { module: 'reports', actions: ['view'] },
     { module: 'notes', actions: ['view'] },
     { module: 'wiki', actions: ['view'] },
+    { module: 'campaigns', actions: ['view'] },
+    { module: 'content_calendar', actions: ['view'] },
+    { module: 'print_jobs', actions: ['view'] },
     { module: 'notifications', actions: ['view'] }
   ]
 };
@@ -126,7 +139,9 @@ const MODULE_DEPENDENCIES = {
   budget: ['projects'],
   expenses: ['budget'],
   intake: ['tasks'],
-  content_calendar: ['calendar', 'tasks']
+  content_calendar: ['calendar', 'tasks'],
+  campaigns: ['content_calendar'],
+  print_jobs: ['tasks', 'media']
 };
 
 module.exports = {

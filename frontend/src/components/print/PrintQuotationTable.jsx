@@ -1,0 +1,3 @@
+export default function PrintQuotationTable({ quotations = [] }) {
+  return <div className="overflow-hidden rounded-md border bg-white"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Quotation</th><th className="px-4 py-3">Vendor</th><th className="px-4 py-3">Amount</th><th className="px-4 py-3">Status</th></tr></thead><tbody>{quotations.map((q) => <tr key={q._id} className="border-t"><td className="px-4 py-3">{q.quotationNumber}</td><td className="px-4 py-3">{q.vendorName}</td><td className="px-4 py-3">{q.totalAmount}</td><td className="px-4 py-3">{q.status}</td></tr>)}</tbody></table></div>;
+}

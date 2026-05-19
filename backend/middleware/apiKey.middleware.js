@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const APIKey = require('../models/ApiKey');
+const APIKey = require('../models/APIKey');
 
 const hashKey = (key) => crypto.createHash('sha256').update(key).digest('hex');
 
