@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { webhookApi, webhookDeliveryApi } from '../../../api/apiKey.api';
+import { webhookApi, webhookDeliveryApi } from '../../api/apiKey.api';
 
 const card = {
   background: 'rgba(255,255,255,0.07)',

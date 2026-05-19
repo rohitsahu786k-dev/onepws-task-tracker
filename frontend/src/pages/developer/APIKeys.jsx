@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { apiKeyApi } from '../../../api/apiKey.api';
+import { apiKeyApi } from '../../api/apiKey.api';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const card = {
