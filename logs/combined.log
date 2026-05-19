@@ -3529,3 +3529,42 @@
 2026-05-19 11:36:27 [info]: ::1 - - [19/May/2026:06:06:27 +0000] "GET /api HTTP/1.1" 404 51 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
 2026-05-19 11:36:28 [info]: ::1 - - [19/May/2026:06:06:28 +0000] "GET /favicon.ico HTTP/1.1" 404 59 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
 2026-05-19 14:19:15 [info]: ✅ MongoDB Connected: ac-yoesdyd-shard-00-01.koqfbyp.mongodb.net
+2026-05-19 14:30:09 [info]: ::1 - - [19/May/2026:09:00:09 +0000] "GET /api/auth/me HTTP/1.1" 401 94 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:30:09 [info]: ::1 - - [19/May/2026:09:00:09 +0000] "GET /api/auth/me HTTP/1.1" 401 94 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:30:11 [info]: ::1 - - [19/May/2026:09:00:11 +0000] "POST /api/auth/refresh-token HTTP/1.1" 401 51 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:30:14 [info]: ::1 - - [19/May/2026:09:00:14 +0000] "POST /api/auth/login HTTP/1.1" 403 67 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:30:41 [info]: ::1 - - [19/May/2026:09:00:41 +0000] "POST /api/auth/login HTTP/1.1" 403 67 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:08 [info]: ::1 - - [19/May/2026:09:01:08 +0000] "POST /api/auth/login HTTP/1.1" 403 67 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:10 [info]: ::1 - - [19/May/2026:09:01:10 +0000] "GET /api/auth/google HTTP/1.1" 302 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:13 [info]: ::1 - - [19/May/2026:09:01:13 +0000] "GET /api/auth/google/callback?iss=https%3A%2F%2Faccounts.google.com&code=4%2F0AeoWuM8iZBzVjQf6oRj3Ajp_WIr1xaZz0nD6yDoBI1TOwqkVII4I1w0bq1YGXUtQlISKHw&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid&authuser=0&hd=onepws.com&prompt=none HTTP/1.1" 302 344 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:14 [info]: ::1 - - [19/May/2026:09:01:14 +0000] "GET /api/auth/me HTTP/1.1" 200 4691 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:14 [info]: ::1 - - [19/May/2026:09:01:14 +0000] "GET /api/auth/me HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:14 [info]: ::1 - - [19/May/2026:09:01:14 +0000] "GET /api/notifications/unread-count HTTP/1.1" 200 26 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:14 [info]: ::1 - - [19/May/2026:09:01:14 +0000] "GET /api/notifications?limit=10 HTTP/1.1" 200 26 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:14 [info]: ::1 - - [19/May/2026:09:01:14 +0000] "GET /api/notifications?limit=10 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:14 [info]: ::1 - - [19/May/2026:09:01:14 +0000] "GET /api/notifications/unread-count HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:46 [info]: ::1 - - [19/May/2026:09:01:46 +0000] "POST /api/auth/logout HTTP/1.1" 200 52 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:31:48 [info]: ::1 - - [19/May/2026:09:01:48 +0000] "POST /api/auth/login HTTP/1.1" 403 67 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:32:30 [info]: ::1 - - [19/May/2026:09:02:30 +0000] "POST /api/auth/login HTTP/1.1" 401 55 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:17 [info]: ::1 - - [19/May/2026:09:03:17 +0000] "POST /api/auth/login HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:20 [info]: ::1 - - [19/May/2026:09:03:20 +0000] "POST /api/auth/login HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:25 [info]: ::1 - - [19/May/2026:09:03:25 +0000] "POST /api/auth/forgot-password HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:30 [info]: ::1 - - [19/May/2026:09:03:30 +0000] "POST /api/auth/forgot-password HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:31 [info]: ::1 - - [19/May/2026:09:03:31 +0000] "POST /api/auth/forgot-password HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:33 [info]: ::1 - - [19/May/2026:09:03:33 +0000] "POST /api/auth/forgot-password HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:33 [info]: ::1 - - [19/May/2026:09:03:33 +0000] "POST /api/auth/forgot-password HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:33 [info]: ::1 - - [19/May/2026:09:03:33 +0000] "POST /api/auth/forgot-password HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:34 [info]: ::1 - - [19/May/2026:09:03:34 +0000] "POST /api/auth/forgot-password HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:36 [info]: ::1 - - [19/May/2026:09:03:36 +0000] "POST /api/auth/login HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:33:48 [info]: ::1 - - [19/May/2026:09:03:48 +0000] "POST /api/auth/login HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:34:09 [info]: ::1 - - [19/May/2026:09:04:09 +0000] "POST /api/auth/login HTTP/1.1" 429 81 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+2026-05-19 14:35:01 [info]: ✅ MongoDB Connected: ac-yoesdyd-shard-00-01.koqfbyp.mongodb.net
+2026-05-19 14:35:29 [info]: ✅ MongoDB Connected: ac-yoesdyd-shard-00-00.koqfbyp.mongodb.net
+2026-05-19 14:35:29 [info]: 
+🚀 OnePWS Marketing API
+   Mode:    development
+   URL:     http://localhost:5000
+   API:     http://localhost:5000/api
+   Health:  http://localhost:5000/api/health
+    
+2026-05-19 14:35:37 [info]: ✅ MongoDB Connected: ac-yoesdyd-shard-00-00.koqfbyp.mongodb.net

@@ -24,8 +24,8 @@ const COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#0891b2'
 const pickMetric = (summary, keys) => keys.map((key) => summary?.[key]).find((value) => value !== undefined && value !== null) ?? 0;
 
 const ReportsDashboard = () => {
-  const { workspace } = useAuthStore();
-  const workspaceId = workspace?._id;
+  const { workspace, user } = useAuthStore();
+  const workspaceId = workspace?._id || workspace?.id || user?.defaultWorkspace?._id || user?.defaultWorkspace;
   const [reportType, setReportType] = useState('daily_tracker');
   const [filters, setFilters] = useState({ dateFrom: '', dateTo: '', statuses: '', priorities: '' });
 
